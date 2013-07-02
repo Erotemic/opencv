@@ -130,16 +130,20 @@ void FREAK::buildPattern()
                              radius[6]/2.0, radius[6]/2.0
                             };
     // fill the lookup table
+    // Build a FREAK sampling pattern for each scale
     for( int scaleIdx=0; scaleIdx < FREAK_NB_SCALES; ++scaleIdx ) {
         patternSizes[scaleIdx] = 0; // proper initialization
         scalingFactor = std::pow(scaleStep,scaleIdx); //scale of the pattern, scaleStep ^ scaleIdx
-
+        // Build a FREAK sampling pattern for each orientation
         for( int orientationIdx = 0; orientationIdx < FREAK_NB_ORIENTATION; ++orientationIdx ) {
             theta = double(orientationIdx)* 2*CV_PI/double(FREAK_NB_ORIENTATION); // orientation of the pattern
             int pointIdx = 0;
-
+            // Build a FREAK sampling pattern
             PatternPoint* patternLookupPtr = &patternLookup[0];
+            // For each concentric circle
             for( size_t i = 0; i < 8; ++i ) {
+                // For each circle on the boundary of the current concentric
+                // circle
                 for( int k = 0 ; k < n[i]; ++k ) {
                     beta = CV_PI/n[i] * (i%2); // orientation offset so that groups of points on each circles are staggered
                     alpha = double(k)* 2*CV_PI/double(n[i])+beta+theta;
@@ -162,25 +166,55 @@ void FREAK::buildPattern()
     }
 
     // build the list of orientation pairs
-    orientationPairs[0].i=0; orientationPairs[0].j=3; orientationPairs[1].i=1; orientationPairs[1].j=4; orientationPairs[2].i=2; orientationPairs[2].j=5;
-    orientationPairs[3].i=0; orientationPairs[3].j=2; orientationPairs[4].i=1; orientationPairs[4].j=3; orientationPairs[5].i=2; orientationPairs[5].j=4;
-    orientationPairs[6].i=3; orientationPairs[6].j=5; orientationPairs[7].i=4; orientationPairs[7].j=0; orientationPairs[8].i=5; orientationPairs[8].j=1;
+    orientationPairs[0].i=0; orientationPairs[0].j=3;
+    orientationPairs[1].i=1; orientationPairs[1].j=4;
+    orientationPairs[2].i=2; orientationPairs[2].j=5;
+    orientationPairs[3].i=0; orientationPairs[3].j=2;
+    orientationPairs[4].i=1; orientationPairs[4].j=3;
+    orientationPairs[5].i=2; orientationPairs[5].j=4;
+    orientationPairs[6].i=3; orientationPairs[6].j=5;
+    orientationPairs[7].i=4; orientationPairs[7].j=0;
+    orientationPairs[8].i=5; orientationPairs[8].j=1;
 
-    orientationPairs[9].i=6; orientationPairs[9].j=9; orientationPairs[10].i=7; orientationPairs[10].j=10; orientationPairs[11].i=8; orientationPairs[11].j=11;
-    orientationPairs[12].i=6; orientationPairs[12].j=8; orientationPairs[13].i=7; orientationPairs[13].j=9; orientationPairs[14].i=8; orientationPairs[14].j=10;
-    orientationPairs[15].i=9; orientationPairs[15].j=11; orientationPairs[16].i=10; orientationPairs[16].j=6; orientationPairs[17].i=11; orientationPairs[17].j=7;
+    orientationPairs[9].i=6;   orientationPairs[9].j=9; 
+    orientationPairs[10].i=7;  orientationPairs[10].j=10;
+    orientationPairs[11].i=8;  orientationPairs[11].j=11;
+    orientationPairs[12].i=6;  orientationPairs[12].j=8;
+    orientationPairs[13].i=7;  orientationPairs[13].j=9;
+    orientationPairs[14].i=8;  orientationPairs[14].j=10;
+    orientationPairs[15].i=9;  orientationPairs[15].j=11;
+    orientationPairs[16].i=10; orientationPairs[16].j=6;
+    orientationPairs[17].i=11; orientationPairs[17].j=7;
 
-    orientationPairs[18].i=12; orientationPairs[18].j=15; orientationPairs[19].i=13; orientationPairs[19].j=16; orientationPairs[20].i=14; orientationPairs[20].j=17;
-    orientationPairs[21].i=12; orientationPairs[21].j=14; orientationPairs[22].i=13; orientationPairs[22].j=15; orientationPairs[23].i=14; orientationPairs[23].j=16;
-    orientationPairs[24].i=15; orientationPairs[24].j=17; orientationPairs[25].i=16; orientationPairs[25].j=12; orientationPairs[26].i=17; orientationPairs[26].j=13;
+    orientationPairs[18].i=12; orientationPairs[18].j=15;
+    orientationPairs[19].i=13; orientationPairs[19].j=16;
+    orientationPairs[20].i=14; orientationPairs[20].j=17;
+    orientationPairs[21].i=12; orientationPairs[21].j=14;
+    orientationPairs[22].i=13; orientationPairs[22].j=15;
+    orientationPairs[23].i=14; orientationPairs[23].j=16;
+    orientationPairs[24].i=15; orientationPairs[24].j=17;
+    orientationPairs[25].i=16; orientationPairs[25].j=12;
+    orientationPairs[26].i=17; orientationPairs[26].j=13;
 
-    orientationPairs[27].i=18; orientationPairs[27].j=21; orientationPairs[28].i=19; orientationPairs[28].j=22; orientationPairs[29].i=20; orientationPairs[29].j=23;
-    orientationPairs[30].i=18; orientationPairs[30].j=20; orientationPairs[31].i=19; orientationPairs[31].j=21; orientationPairs[32].i=20; orientationPairs[32].j=22;
-    orientationPairs[33].i=21; orientationPairs[33].j=23; orientationPairs[34].i=22; orientationPairs[34].j=18; orientationPairs[35].i=23; orientationPairs[35].j=19;
+    orientationPairs[27].i=18; orientationPairs[27].j=21;
+    orientationPairs[28].i=19; orientationPairs[28].j=22;
+    orientationPairs[29].i=20; orientationPairs[29].j=23;
+    orientationPairs[30].i=18; orientationPairs[30].j=20;
+    orientationPairs[31].i=19; orientationPairs[31].j=21;
+    orientationPairs[32].i=20; orientationPairs[32].j=22;
+    orientationPairs[33].i=21; orientationPairs[33].j=23;
+    orientationPairs[34].i=22; orientationPairs[34].j=18;
+    orientationPairs[35].i=23; orientationPairs[35].j=19;
 
-    orientationPairs[36].i=24; orientationPairs[36].j=27; orientationPairs[37].i=25; orientationPairs[37].j=28; orientationPairs[38].i=26; orientationPairs[38].j=29;
-    orientationPairs[39].i=30; orientationPairs[39].j=33; orientationPairs[40].i=31; orientationPairs[40].j=34; orientationPairs[41].i=32; orientationPairs[41].j=35;
-    orientationPairs[42].i=36; orientationPairs[42].j=39; orientationPairs[43].i=37; orientationPairs[43].j=40; orientationPairs[44].i=38; orientationPairs[44].j=41;
+    orientationPairs[36].i=24; orientationPairs[36].j=27;
+    orientationPairs[37].i=25; orientationPairs[37].j=28;
+    orientationPairs[38].i=26; orientationPairs[38].j=29;
+    orientationPairs[39].i=30; orientationPairs[39].j=33;
+    orientationPairs[40].i=31; orientationPairs[40].j=34;
+    orientationPairs[41].i=32; orientationPairs[41].j=35;
+    orientationPairs[42].i=36; orientationPairs[42].j=39;
+    orientationPairs[43].i=37; orientationPairs[43].j=40;
+    orientationPairs[44].i=38; orientationPairs[44].j=41;
 
     for( unsigned m = FREAK_NB_ORIENPAIRS; m--; ) {
         const float dx = patternLookup[orientationPairs[m].i].x-patternLookup[orientationPairs[m].j].x;
@@ -479,17 +513,17 @@ uchar FREAK::meanIntensity( const cv::Mat& image, const cv::Mat& integral,
     // expected case:
 
     // calculate borders
-    const int x_left = int(xf-radius+0.5);
-    const int y_top = int(yf-radius+0.5);
-    const int x_right = int(xf+radius+1.5);//integral image is 1px wider
-    const int y_bottom = int(yf+radius+1.5);//integral image is 1px higher
+    const int x_left   = int(xf-radius+0.5);
+    const int y_top    = int(yf-radius+0.5);
+    const int x_right  = int(xf+radius+1.5); //integral image is 1px wider
+    const int y_bottom = int(yf+radius+:1.5);//integral image is 1px higher
     int ret_val;
 
-    ret_val = integral.at<int>(y_bottom,x_right);//bottom right corner
+    ret_val  = integral.at<int>(y_bottom,x_right);//bottom right corner
     ret_val -= integral.at<int>(y_bottom,x_left);
     ret_val += integral.at<int>(y_top,x_left);
     ret_val -= integral.at<int>(y_top,x_right);
-    ret_val = ret_val/( (x_right-x_left)* (y_bottom-y_top) );
+    ret_val  = ret_val/( (x_right-x_left)* (y_bottom-y_top) );
     //~ std::cout<<integral.step[1]<<std::endl;
     return static_cast<uchar>(ret_val);
 }
@@ -604,10 +638,18 @@ void FREAKImpl::drawPattern()
 
 // -------------------------------------------------
 /* FREAK interface implementation */
-FREAK::FREAK( bool _orientationNormalized, bool _scaleNormalized
-            , float _patternScale, int _nOctaves, const std::vector<int>& _selectedPairs )
-    : orientationNormalized(_orientationNormalized), scaleNormalized(_scaleNormalized),
-    patternScale(_patternScale), nOctaves(_nOctaves), extAll(false), nOctaves0(0), selectedPairs0(_selectedPairs)
+FREAK::FREAK( bool  _orientationNormalized,
+              bool  _scaleNormalized,
+              float _patternScale,
+              int   _nOctaves,
+              const std::vector<int>& _selectedPairs ) : 
+    orientationNormalized(_orientationNormalized),
+    scaleNormalized(_scaleNormalized),
+    patternScale(_patternScale),
+    nOctaves(_nOctaves),
+    extAll(false),
+    nOctaves0(0),
+    selectedPairs0(_selectedPairs)
 {
 }
 
