@@ -432,7 +432,14 @@ protected:
     };
 
     /* look-up table for the pattern points 
-       (position+sigma of all points at all scales and orientation) */
+       (position+sigma of all points at all scales and orientation) 
+       
+       Note: Point = one retinal sample
+       Indexed by: (scaleIdx, orientIdx, pointIdx) 
+         scaleIdx  * FREAK_NB_ORIENTATION * FREAK_NB_POINTS + 
+         orientIdx * FREAK_NB_POINTS + 
+         pointIdx
+       */
     std::vector<PatternPoint> patternLookup;
     /* size of the pattern at a specific scale 
       (used to check if a point is within image boundaries) */
