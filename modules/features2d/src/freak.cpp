@@ -30,6 +30,8 @@
 //  or tort (including negligence or otherwise) arising in any way out of
 //  the use of this software, even if advised of the possibility of such damage.
 
+/* FREAK header definitions are in:
+     opencv/modules/features2d/include/opencv2/features2d.hpp */
 #include "precomp.hpp"
 #include <fstream>
 #include <stdlib.h>
@@ -105,51 +107,72 @@ struct sortMean
     }
 };
 
+/* def FREAK::buildPattern():
+   """1) Build the FREAK retinal sampling patterns
+      2) Build the FREAK retinal pairs"""
+ */
 void FREAK::buildPattern()
 {
     if( patternScale == patternScale0 && nOctaves == nOctaves0 && !patternLookup.empty() )
         return;
-
+    // ============================================
+    // 1) Build the FREAK retinal sampling patterns
+    // ============================================
     nOctaves0 = nOctaves;
     patternScale0 = patternScale;
-
+    // Allocate (x,y,sigma) for sampling pattern
     patternLookup.resize(FREAK_NB_SCALES*FREAK_NB_ORIENTATION*FREAK_NB_POINTS);
     double scaleStep = std::pow(2.0, (double)(nOctaves)/FREAK_NB_SCALES ); // 2 ^ ( (nOctaves-1) /nbScales)
     double scalingFactor, alpha, beta, theta = 0;
 
-    // pattern definition, radius normalized to 1.0 (outer point position+sigma=1.0)
-    const int n[8] = {6,6,6,6,6,6,6,1}; // number of points on each concentric circle (from outer to inner)
+    /* Pattern definition: 
+        radius normalized to 1.0 
+        (outer point position+sigma=1.0)
+    */
+    // number of points on each concentric circle (from outer to inner)
+    const int n[8] = {6,6,6,6,6,6,6,1}; 
     const double bigR(2.0/3.0); // bigger radius
     const double smallR(2.0/24.0); // smaller radius
-    const double unitSpace( (bigR-smallR)/21.0 ); // define spaces between concentric circles (from center to outer: 1,2,3,4,5,6)
+    /* The distance between concentric circles 
+        (from center to outer: 1,2,3,4,5,6)    */
+    const double unitSpace( (bigR-smallR)/21.0 ); 
     // radii of the concentric cirles (from outer to inner)
-    const double radius[8] = {bigR, bigR-6*unitSpace, bigR-11*unitSpace, bigR-15*unitSpace, bigR-18*unitSpace, bigR-20*unitSpace, smallR, 0.0};
-    // sigma of pattern points (each group of 6 points on a concentric cirle has the same sigma)
+    const double radius[8] = {bigR, bigR-6*unitSpace, bigR-11*unitSpace,
+        bigR-15*unitSpace, bigR-18*unitSpace, bigR-20*unitSpace, smallR, 0.0};
+    /* sigma of pattern points 
+       (each group of 6 points on a concentric cirle has the same sigma) */
     const double sigma[8] = {radius[0]/2.0, radius[1]/2.0, radius[2]/2.0,
                              radius[3]/2.0, radius[4]/2.0, radius[5]/2.0,
                              radius[6]/2.0, radius[6]/2.0
                             };
-    // fill the lookup table
-    // Build a FREAK sampling pattern for each scale
+    // ----------------------------------
+    // FILL_LOOKUP_TABLE: Fill the lookup table of (x,y,sigma) defining the receptive fields
+    // ----------------------------------
+    // FOREACH: scale ...
     for( int scaleIdx=0; scaleIdx < FREAK_NB_SCALES; ++scaleIdx ) {
         patternSizes[scaleIdx] = 0; // proper initialization
         scalingFactor = std::pow(scaleStep,scaleIdx); //scale of the pattern, scaleStep ^ scaleIdx
-        // Build a FREAK sampling pattern for each orientation
+        int _scaleOFST = scaleIdx * FREAK_NB_ORIENTATION * FREAK_NB_POINTS;
+        // FOREACH: orientation ...
         for( int orientationIdx = 0; orientationIdx < FREAK_NB_ORIENTATION; ++orientationIdx ) {
             theta = double(orientationIdx)* 2*CV_PI/double(FREAK_NB_ORIENTATION); // orientation of the pattern
+            int _orienOFST = orientationIdx * FREAK_NB_POINTS;
+            // ----------------------------------
+            // ... BUILD: A FREAK sampling pattern
             int pointIdx = 0;
-            // Build a FREAK sampling pattern
             PatternPoint* patternLookupPtr = &patternLookup[0];
             // For each concentric circle
             for( size_t i = 0; i < 8; ++i ) {
                 // For each circle on the boundary of the current concentric
                 // circle
                 for( int k = 0 ; k < n[i]; ++k ) {
-                    beta = CV_PI/n[i] * (i%2); // orientation offset so that groups of points on each circles are staggered
+                    // orientation offset so that groups of points on each circles are staggered
+                    beta = CV_PI/n[i] * (i%2); 
                     alpha = double(k)* 2*CV_PI/double(n[i])+beta+theta;
 
                     // add the point to the look-up table
-                    PatternPoint& point = patternLookupPtr[ scaleIdx*FREAK_NB_ORIENTATION*FREAK_NB_POINTS+orientationIdx*FREAK_NB_POINTS+pointIdx ];
+                    int patternIdx = _scaleOFST + _orienOFST + pointIdx;
+                    PatternPoint& point = patternLookupPtr[ patternIdx ];
                     point.x = static_cast<float>(radius[i] * cos(alpha) * scalingFactor * patternScale);
                     point.y = static_cast<float>(radius[i] * sin(alpha) * scalingFactor * patternScale);
                     point.sigma = static_cast<float>(sigma[i] * scalingFactor * patternScale);
@@ -162,9 +185,18 @@ void FREAK::buildPattern()
                     ++pointIdx;
                 }
             }
-        }
-    }
+            // ... END BUILD: FREAK Sampling pattern
+            // ----------------------------------
+        } //end foreach orientationIdx
+    } //end foreach scaleIdx
+    /* ---------------------------------
+     * END: FILL_LOOKUP_TABLE -- patternLookup
+     * ---------------------------------- */
 
+    /* ============================================
+     * 2) Build the FREAK retinal pairs
+     * ============================================
+     */
     // build the list of orientation pairs
     orientationPairs[0].i=0; orientationPairs[0].j=3;
     orientationPairs[1].i=1; orientationPairs[1].j=4;
@@ -269,15 +301,17 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
     int direction0;
     int direction1;
 
-    // compute the scale index corresponding to the keypoint size and remove keypoints close to the border
+    // compute the scale index corresponding to the keypoint size and remove
+    // keypoints close to the border
     if( scaleNormalized ) {
         for( size_t k = keypoints.size(); k--; ) {
             //Is k non-zero? If so, decrement it and continue"
             kpScaleIdx[k] = std::max( (int)(std::log(keypoints[k].size/FREAK_SMALLEST_KP_SIZE)*sizeCst+0.5) ,0);
             if( kpScaleIdx[k] >= FREAK_NB_SCALES )
                 kpScaleIdx[k] = FREAK_NB_SCALES-1;
-
-            if( keypoints[k].pt.x <= patternSizes[kpScaleIdx[k]] || //check if the description at this specific position and scale fits inside the image
+            //check if the description at this specific position and scale fits
+            //inside the image
+            if( keypoints[k].pt.x <= patternSizes[kpScaleIdx[k]] ||
                  keypoints[k].pt.y <= patternSizes[kpScaleIdx[k]] ||
                  keypoints[k].pt.x >= image.cols-patternSizes[kpScaleIdx[k]] ||
                  keypoints[k].pt.y >= image.rows-patternSizes[kpScaleIdx[k]]
@@ -290,7 +324,9 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
     else {
         const int scIdx = std::max( (int)(1.0986122886681*sizeCst+0.5) ,0);
         for( size_t k = keypoints.size(); k--; ) {
-            kpScaleIdx[k] = scIdx; // equivalent to the formule when the scale is normalized with a constant size of keypoints[k].size=3*SMALLEST_KP_SIZE
+            // equivalent to the formule when the scale is normalized with a
+            // constant size of keypoints[k].size=3*SMALLEST_KP_SIZE
+            kpScaleIdx[k] = scIdx; 
             if( kpScaleIdx[k] >= FREAK_NB_SCALES ) {
                 kpScaleIdx[k] = FREAK_NB_SCALES-1;
             }
@@ -309,9 +345,10 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
     if( !extAll ) {
         // extract the best comparisons only
         descriptors = cv::Mat::zeros((int)keypoints.size(), FREAK_NB_PAIRS/8, CV_8U);
-#if CV_SSE2
+
+#if CV_SSE2 // If the processor has SSE2 (Streaming SIMD Extensions 2) capabilities 
         __m128i* ptr= (__m128i*) (descriptors.data+(keypoints.size()-1)*descriptors.step[0]);
-#else
+#else // If the processor does not have SSE2 (Streaming SIMD Extensions 2)  
         std::bitset<FREAK_NB_PAIRS>* ptr = (std::bitset<FREAK_NB_PAIRS>*) (descriptors.data+(keypoints.size()-1)*descriptors.step[0]);
 #endif
         for( size_t k = keypoints.size(); k--; ) {
@@ -346,8 +383,11 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
             for( int i = FREAK_NB_POINTS; i--; ) {
                 pointsValue[i] = meanIntensity(image, imgIntegral, keypoints[k].pt.x,keypoints[k].pt.y, kpScaleIdx[k], thetaIdx, i);
             }
-#if CV_SSE2
-            // note that comparisons order is modified in each block (but first 128 comparisons remain globally the same-->does not affect the 128,384 bits segmanted matching strategy)
+
+#if CV_SSE2 // If the processor has SSE2 (Streaming SIMD Extensions 2)  
+            /* note that comparisons order is modified in each block 
+             (but first 128 comparisons remain globally the same-->does not
+             affect the 128,384 bits segmanted matching strategy) */
             int cnt = 0;
             for( int n = FREAK_NB_PAIRS/128; n-- ; )
             {
@@ -390,17 +430,19 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
                         pointsValue[descriptionPairs[cnt+14].j],
                         pointsValue[descriptionPairs[cnt+15].j]);
 
-                    __m128i workReg = _mm_min_epu8(operand1, operand2); // emulated "not less than" for 8-bit UNSIGNED integers
-                    workReg = _mm_cmpeq_epi8(workReg, operand2);        // emulated "not less than" for 8-bit UNSIGNED integers
-
-                    workReg = _mm_and_si128(_mm_set1_epi16(short(0x8080 >> m)), workReg); // merge the last 16 bits with the 128bits std::vector until full
+                    // emulated "not less than" for 8-bit UNSIGNED integers
+                    __m128i workReg = _mm_min_epu8(operand1, operand2); 
+                    // emulated "not less than" for 8-bit UNSIGNED integers
+                    workReg = _mm_cmpeq_epi8(workReg, operand2);        
+                    // merge the last 16 bits with the 128bits std::vector until full
+                    workReg = _mm_and_si128(_mm_set1_epi16(short(0x8080 >> m)), workReg); 
                     result128 = _mm_or_si128(result128, workReg);
                 }
                 (*ptr) = result128;
                 ++ptr;
             }
             ptr -= 8;
-#else
+#else // If the processor does not have SSE2 (Streaming SIMD Extensions 2)  
             // extracting descriptor preserving the order of SSE version
             int cnt = 0;
             for( int n = 7; n < FREAK_NB_PAIRS; n += 128)
@@ -512,13 +554,14 @@ uchar FREAK::meanIntensity( const cv::Mat& image, const cv::Mat& integral,
 
     // expected case:
 
-    // calculate borders
+    // calculate borders of the integral image
     const int x_left   = int(xf-radius+0.5);
     const int y_top    = int(yf-radius+0.5);
     const int x_right  = int(xf+radius+1.5); //integral image is 1px wider
-    const int y_bottom = int(yf+radius+:1.5);//integral image is 1px higher
+    const int y_bottom = int(yf+radius+1.5);//integral image is 1px higher
     int ret_val;
 
+    // Use the integral image to calculate summed intensity quickly
     ret_val  = integral.at<int>(y_bottom,x_right);//bottom right corner
     ret_val -= integral.at<int>(y_bottom,x_left);
     ret_val += integral.at<int>(y_top,x_left);

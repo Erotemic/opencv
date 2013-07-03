@@ -431,8 +431,12 @@ protected:
         int weight_dy; // dy/(norm_sq))*4096
     };
 
-    std::vector<PatternPoint> patternLookup; // look-up table for the pattern points (position+sigma of all points at all scales and orientation)
-    int patternSizes[NB_SCALES]; // size of the pattern at a specific scale (used to check if a point is within image boundaries)
+    /* look-up table for the pattern points 
+       (position+sigma of all points at all scales and orientation) */
+    std::vector<PatternPoint> patternLookup;
+    /* size of the pattern at a specific scale 
+      (used to check if a point is within image boundaries) */
+    int patternSizes[NB_SCALES];
     DescriptionPair descriptionPairs[NB_PAIRS];
     OrientationPair orientationPairs[NB_ORIENPAIRS];
 };
