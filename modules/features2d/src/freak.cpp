@@ -44,14 +44,14 @@
 #include <string.h>
 
 // JONS Definitions: 
-#define JC_VERBOSE 
+#define __FREAK_DEBUG_PRINT_STATEMENTS__
 
-#ifdef JC_VERBOSE
-  #define __JC_DBG__(arg) arg
-  #define __JC_DBG_PRINT__(arg) std::cout << "JC_DBG: " << arg << std::endl
+#ifdef __FREAK_DEBUG_PRINT_STATEMENTS__
+  #define __DBG_CMD__(arg) arg
+  #define __DBG_PRINT__(arg) std::cout << "DBG: " << arg << std::endl;
 #else
-  #define __JC_DBG__(arg)  
-  #define __JC_DBG_PRINT__(arg)  
+  #define __DBG_CMD__(arg)  
+  #define __DBG_PRINT__(arg)  
 #endif
 // JONS UNANSWERED QUESTIONS: 
 //
@@ -136,7 +136,7 @@ void FREAK::buildPattern()
         std::cout << "FREAK pattern is already built" << std::endl;
         return;
     }
-    __JC_DBG_PRINT__("Building FREAK Pattern");
+    __DBG_PRINT__(" *** Building the FREAK pattern.")
     // ============================================
     // FREAK::buildPattern()
     // Step 1) Build the FREAK retinal sampling patterns
@@ -145,12 +145,14 @@ void FREAK::buildPattern()
     this->patternScale0 = this->patternScale;
     // Allocate scales*orientations*points (x,y,sigma)'s for sampling pattern
 
+    __DBG_PRINT__(" *** with:" << 
+            "\n         *** *** FREAK_NB_SCALES: " << FREAK_NB_SCALES <<
+            "\n         *** *** FREAK_NB_ORIENTATION: " << FREAK_NB_ORIENTATION << 
+            "\n         *** *** FREAK_NB_POINTS: " << FREAK_NB_POINTS << 
+            "");
+
     const int nPatternAlloc(FREAK_NB_SCALES * FREAK_NB_ORIENTATION * FREAK_NB_POINTS);
-    __JC_DBG_PRINT__("Building with:" << 
-            "\n  FREAK_NB_SCALES: " << FREAK_NB_SCALES <<
-            "\n  FREAK_NB_ORIENTATION: " << FREAK_NB_ORIENTATION << 
-            "\n  FREAK_NB_POINTS: " << FREAK_NB_POINTS);
-    __JC_DBG_PRINT__("Allocating room for " << nPatternAlloc << " pattern samples");
+    __DBG_PRINT__(" *** Allocating room for " << nPatternAlloc << " pattern samples")
     this->patternLookup.resize(nPatternAlloc);
     double scaleStep = std::pow(2.0, (double)(this->nOctaves)/FREAK_NB_SCALES ); // 2 ^ ( (nOctaves-1) /nbScales)
     double scalingFactor, alpha, beta, theta = 0;
@@ -335,6 +337,10 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
         return;
     }
 
+    int nKpts = keypoints.size();
+    __DBG_PRINT__("Computing FREAK descriptors ")
+    __DBG_PRINT__(" ... on " <<  nKpts << " keypoints")
+
     // Build the retinal sampling pattern if it hasn't already been done
     ((FREAK*)this)->buildPattern();
 
@@ -355,10 +361,11 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
 
     // compute the scale index corresponding to the keypoint size and remove
     // keypoints close to the border
-    __JC_DBG__(int nKptsErased=0;)
+    __DBG_CMD__(int nKptsErased=0;)
+    __DBG_PRINT__(" ... Step 1) Keypoint scale normalization")
     if( this->scaleNormalized ) {
+        __DBG_PRINT__(" ... ... normalizing keypoint scale to fit in to the precomputed pattern")
         // QUANTIZE TO STANDARD SCALES DEFINED BY SCALE INDEXES
-        __JC_DBG_PRINT__("FREAK Scale normalization on...");
         // FOR the k(th) keypoint
         for( size_t k = keypoints.size(); k--; ) {
             // Store k(th) keypoint's scale index (scaleIdx)
@@ -376,16 +383,18 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
                 keypoints[k].pt.x >= image.cols-patternSizes[kpScaleIdx[k]] ||
                 keypoints[k].pt.y >= image.rows-patternSizes[kpScaleIdx[k]])
             {
+               
+                __DBG_PRINT__(" ... ... ... about to erase the k(th) keypoint and kpScaleIdx k=" << k)
                 keypoints.erase(kpBegin+k);
                 kpScaleIdx.erase(ScaleIdxBegin+k);
-                __JC_DBG__(nKptsErased++;)
+                __DBG_CMD__(nKptsErased++;)
             }
         }
-        __JC_DBG_PRINT__("FREAK Scale normalization erased " << nKptsErased );
+        __DBG_PRINT__(" ... ... Finished normalizing scales")
     }
     else {
         // Non-QUANTIZED Scale. 
-        __JC_DBG_PRINT__("FREAK Scale normalization off...");
+        __DBG_PRINT__(" ... ... setting all keypoint scale to 1")
         const int scIdx = std::max( (int)(1.0986122886681*sizeCst+0.5) ,0);
         for( size_t k = keypoints.size(); k--; ) {
             // equivalent to the formule when the scale is normalized with a
@@ -399,17 +408,20 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
                 keypoints[k].pt.x >= image.cols-patternSizes[kpScaleIdx[k]] ||
                 keypoints[k].pt.y >= image.rows-patternSizes[kpScaleIdx[k]]
                ) {
+                __DBG_PRINT__(" ... ... ... about to erase the k(th) keypoint and kpScaleIdx k=" << k)
                 keypoints.erase(kpBegin+k);
                 kpScaleIdx.erase(ScaleIdxBegin+k);
-                __JC_DBG__(nKptsErased++;)
+                __DBG_CMD__(nKptsErased++;)
             }
         }
-        __JC_DBG_PRINT__("FREAK sans scale normalization erased " << nKptsErased );
+        __DBG_PRINT__(" ... ... Finished setting keypoint scale to 1")
     }
+    __DBG_PRINT__(" ... FREAK scale thresholds erased " << nKptsErased << " keypoints")
 
     // allocate descriptor memory, estimate orientations, extract descriptors
     // extAll = Extract All Pairs (not just the selection) defualts to False
     if( !this->extAll ) {
+         __DBG_PRINT__(" ... Extracting keypoint descriptors using selected pairs")
         // extract the selected pairs only
         
         // A FREAK description is a list of comparisions of mean image intensities
@@ -422,16 +434,20 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
         // Take advantage of the processors  SSE2 (Streaming SIMD Extensions 2) capabilities 
         // if available otherwise use a std::bitset
 #if CV_SSE2
+         __DBG_PRINT__(" ... Using the SSE2 hardware")
         __m128i* ptr= (__m128i*) (descriptors.data+(keypoints.size()-1)*descriptors.step[0]);
 #else 
+         __DBG_PRINT__(" ... Using std::bitset instead of SSE2 hardware")
         std::bitset<FREAK_NB_PAIRS>* ptr = 
             (std::bitset<FREAK_NB_PAIRS>*) (descriptors.data+(keypoints.size()-1)*descriptors.step[0]);
 #endif
 
         // FOR the k(th) keypoint
         for( size_t k = keypoints.size(); k--; ) {
+            __DBG_PRINT__(" ... Computing keypoint descriptor " <<  k <<  " / "  << keypoints.size() )
             // Overwrite detected keypoint orientation
             if( !this->orientationNormalized ) {
+                __DBG_PRINT__(" ... ... keypoints[" << k << "].angle = 0")
                 thetaIdx = 0; // assign 0 degrees to all keypoints
                 keypoints[k].angle = 0.0;
             }
@@ -454,6 +470,7 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
                 
                 // C++ Equation 3:
                 // Get mean intensity at all points
+                __DBG_PRINT__(" ... ... Normalizing orientation of keypoints[" << k << "].angle")
                 for( int i = FREAK_NB_POINTS; i--; ) {
                     pointsValue[i] = meanIntensity(image, imgIntegral, keypoints[k].pt.x,keypoints[k].pt.y, kpScaleIdx[k], 0, i);
                 }
@@ -469,6 +486,7 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
                 }
                 //estimate the new orientation
                 keypoints[k].angle = static_cast<float>(atan2((float)gradMagY,(float)gradMagX)*(180.0/CV_PI));
+                __DBG_PRINT__(" ... ... keypoints[" << k << "].angle " << keypoints[k].angle)
                 thetaIdx = int(FREAK_NB_ORIENTATION*keypoints[k].angle*(1/360.0)+0.5);
                 if( thetaIdx < 0 )
                     thetaIdx += FREAK_NB_ORIENTATION;
@@ -476,6 +494,7 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
                 if( thetaIdx >= FREAK_NB_ORIENTATION ) // wrap around if out of bounds
                     thetaIdx -= FREAK_NB_ORIENTATION;
             }
+            __DBG_PRINT__(" ... ... Extracting mean intensity ")
             // extract descriptor at the computed orientation
             for( int i = FREAK_NB_POINTS; i--; ) {
                 pointsValue[i] = meanIntensity(image, imgIntegral, keypoints[k].pt.x,keypoints[k].pt.y, kpScaleIdx[k], thetaIdx, i);
@@ -485,12 +504,15 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
             /* note that comparisons order is modified in each block 
              (but first 128 comparisons remain globally the same-->does not
              affect the 128,384 bits segmanted matching strategy) */
+            __DBG_PRINT__(" ... ... SSE2 Comparisions of FREAK retinal regions")
             int cnt = 0;
             for( int n = FREAK_NB_PAIRS/128; n-- ; )
             {
+                __DBG_PRINT__(" ... ... SSE2 comparisons left: ")
                 __m128i result128 = _mm_setzero_si128();
                 for( int m = 128/16; m--; cnt += 16 )
                 {
+                    __DBG_PRINT__(" ... ... ... _mm_set_epi8 iter m=" << m << " cnt=" << cnt)
                     // ... ommiting this this->descriptionPairs for clarity. 
                     __m128i operand1 = _mm_set_epi8(
                         pointsValue[descriptionPairs[cnt+0].i], pointsValue[descriptionPairs[cnt+1].i],
@@ -520,11 +542,20 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
                     result128 = _mm_or_si128(result128, workReg);
                 }
                 // Encode the bitwise comparisons into the SSE structure
+                __DBG_PRINT__(" ... ... ... (*ptr) = result128")
+                __DBG_PRINT__(" !!!===============!!!")
+                __DBG_PRINT__("ptr = " << ptr)
+                __DBG_PRINT__("result128 = " << result128)
+                __DBG_PRINT__(" !!!===============!!!")
                 (*ptr) = result128;
+                __DBG_PRINT__(" ... ... ... ++ptr")
                 ++ptr;
+                __DBG_PRINT__(" ... ... ... ;;")
             }
+            __DBG_PRINT__(" ... ... next SSE2 keypoint")
             ptr -= 8;
 #else // otherwise use the std::bitset comparisons
+            __DBG_PRINT__(" ... ... std::bitset Comparisions of FREAK retinal regions")
             // extracting descriptor preserving the order of SSE version
             int cnt = 0; // indexes into selected descriptor pairs
             for( int n = 7; n < FREAK_NB_PAIRS; n += 128)
@@ -539,11 +570,13 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
                     }
                 }
             }
+            __DBG_PRINT__(" ... ... next std::bitset keypoint")
             --ptr;
 #endif
         }
     }
     else { // elif this->extAll == True, extract all possible comparisons for selection
+         __DBG_PRINT__(" ... Extracting keypoint descriptors using ALL pairs")
         descriptors = cv::Mat::zeros((int)keypoints.size(), 128, CV_8U);
         std::bitset<1024>* ptr = (std::bitset<1024>*) (descriptors.data+(keypoints.size()-1)*descriptors.step[0]);
 
@@ -594,6 +627,7 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
             --ptr;
         }
     }
+    __DBG_PRINT__(" ... Finished extracting FREAK descriptors")
 }
 
 // BEGIN meanIntensity
