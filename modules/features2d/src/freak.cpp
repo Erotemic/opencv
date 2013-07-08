@@ -44,9 +44,9 @@
 #include <string.h>
 
 // JONS Definitions: 
-#define __FREAK_DEBUG_PRINT_STATEMENTS__
+#define __FREAK_DEBUGING__
 
-#ifdef __FREAK_DEBUG_PRINT_STATEMENTS__
+#ifdef __FREAK_DEBUGING__
   #define __DBG_CMD__(arg) arg
   #define __DBG_PRINT__(arg) std::cout << "DBG: " << arg << std::endl;
 #else
@@ -545,7 +545,7 @@ void FREAK::computeImpl( const Mat& image, std::vector<KeyPoint>& keypoints, Mat
                 __DBG_PRINT__(" ... ... ... (*ptr) = result128")
                 __DBG_PRINT__(" !!!===============!!!")
                 __DBG_PRINT__("ptr = " << ptr)
-                __DBG_PRINT__("result128 = " << result128)
+                __DBG_PRINT__("&result128 = " << &result128)
                 __DBG_PRINT__(" !!!===============!!!")
                 (*ptr) = result128;
                 __DBG_PRINT__(" ... ... ... ++ptr")
