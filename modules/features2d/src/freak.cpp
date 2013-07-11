@@ -44,7 +44,7 @@
 #include <string.h>
 
 // JONS Definitions: 
-#define __FREAK_DEBUGING__
+//#define __FREAK_DEBUGING__
 
 #ifdef __FREAK_DEBUGING__
   #define __DBG_CMD__(arg) arg
@@ -133,7 +133,7 @@ void FREAK::buildPattern()
     if( this->patternScale == this->patternScale0 &&
         this->nOctaves     == this->nOctaves0     &&
         !this->patternLookup.empty() ) {
-        std::cout << "FREAK pattern is already built" << std::endl;
+        __DBG_PRINT__(" FREAK pattern is already built")
         return;
     }
     __DBG_PRINT__(" *** Building the FREAK pattern.")
