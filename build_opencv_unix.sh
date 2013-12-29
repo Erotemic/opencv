@@ -1,7 +1,7 @@
-cd ~\code\opencv
-mkdir ~\code\opencv\build
-cd ~\code\opencv\build
+cd ~/code/opencv
+mkdir ~/code/opencv/build
+cd ~/code/opencv/build
 
 cmake ..
 make -j9
-make install
+sudo make install
