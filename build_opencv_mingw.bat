@@ -13,8 +13,7 @@ mkdir %HOME%\code\opencv\build
 cd %HOME%\code\opencv\build
 
 :: OpenCV settings on windows
-cmake ^
--G "MSYS Makefiles" ^
+cmake -G "MSYS Makefiles" ^
 -DCMAKE_INSTALL_PREFIX=%OPENCV_INSTALL% ^
 -DCMAKE_C_FLAGS=-m32 ^
 -DCMAKE_CXX_FLAGS=-m32 ^
