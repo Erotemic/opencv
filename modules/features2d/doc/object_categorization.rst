@@ -5,6 +5,12 @@ Object Categorization
 
 This section describes approaches based on local 2D features and used to categorize objects.
 
+.. note::
+
+   * A complete Bag-Of-Words sample can be found at opencv_source_code/samples/cpp/bagofwords_classification.cpp
+
+   * (Python) An example using the features2D framework to perform object categorization can be found at opencv_source_code/samples/python2/find_obj.py
+
 BOWTrainer
 ----------
 .. ocv:class:: BOWTrainer
@@ -21,7 +27,7 @@ Lixin Fan, Jutta Willamowski, Cedric Bray, 2004. ::
 
         void add( const Mat& descriptors );
         const vector<Mat>& getDescriptors() const;
-        int descripotorsCount() const;
+        int descriptorsCount() const;
 
         virtual void clear();
 
@@ -50,11 +56,11 @@ Returns a training set of descriptors.
 
 
 
-BOWTrainer::descripotorsCount
+BOWTrainer::descriptorsCount
 ---------------------------------
 Returns the count of all descriptors stored in the training set.
 
-.. ocv:function:: int BOWTrainer::descripotorsCount() const
+.. ocv:function:: int BOWTrainer::descriptorsCount() const
 
 
 
@@ -198,4 +204,3 @@ BOWImgDescriptorExtractor::descriptorType
 Returns an image descriptor type.
 
 .. ocv:function:: int BOWImgDescriptorExtractor::descriptorType() const
-

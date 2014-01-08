@@ -111,6 +111,7 @@
 #define CV_CPU_POPCNT  8
 #define CV_CPU_AVX    10
 #define CV_CPU_NEON   11
+// when adding to this list remember to update the enum in core/utility.cpp
 #define CV_HARDWARE_MAX_FEATURE 255
 
 // do not include SSE/AVX/NEON headers for NVCC compiler
@@ -149,7 +150,12 @@
 #  endif
 #endif
 
-#ifdef __ARM_NEON__
+#if (defined WIN32 || defined _WIN32) && defined(_M_ARM)
+# include <Intrin.h>
+# include "arm_neon.h"
+# define CV_NEON 1
+# define CPU_HAS_NEON_FEATURE (true)
+#elif defined(__ARM_NEON__)
 #  include <arm_neon.h>
 #  define CV_NEON 1
 #endif
@@ -196,8 +202,10 @@
 #if !defined _MSC_VER && !defined __BORLANDC__
 #  if defined __cplusplus && __cplusplus >= 201103L
 #    include <cstdint>
+     typedef std::uint32_t uint;
 #  else
 #    include <stdint.h>
+     typedef uint32_t uint;
 #  endif
 #else
    typedef unsigned uint;
@@ -364,7 +372,7 @@ CV_INLINE int cvRound( double value )
     return t;
 #elif defined _MSC_VER && defined _M_ARM && defined HAVE_TEGRA_OPTIMIZATION
     TEGRA_ROUND(value);
-#elif defined HAVE_LRINT || defined CV_ICC || defined __GNUC__
+#elif defined CV_ICC || defined __GNUC__
 #  ifdef HAVE_TEGRA_OPTIMIZATION
     TEGRA_ROUND(value);
 #  else
@@ -436,7 +444,7 @@ CV_INLINE int cvIsInf( double value )
    // atomic increment on the linux version of the Intel(tm) compiler
 #  define CV_XADD(addr, delta) (int)_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(addr)), delta)
 #elif defined __GNUC__
-#  if defined __clang__ && __clang_major__ >= 3 && !defined __ANDROID__
+#  if defined __clang__ && __clang_major__ >= 3 && !defined __ANDROID__ && !defined __EMSCRIPTEN__ && !defined(__CUDACC__)
 #    ifdef __ATOMIC_ACQ_REL
 #      define CV_XADD(addr, delta) __c11_atomic_fetch_add((_Atomic(int)*)(addr), delta, __ATOMIC_ACQ_REL)
 #    else
@@ -450,17 +458,25 @@ CV_INLINE int cvIsInf( double value )
 #      define CV_XADD(addr, delta) (int)__sync_fetch_and_add((unsigned*)(addr), (unsigned)(delta))
 #    endif
 #  endif
-#elif (defined WIN32 || defined _WIN32 || defined WINCE) && (!defined RC_INVOKED)
-#  if !defined(_M_AMD64) && !defined(_M_IA64) && !defined(_M_ARM)
-     CV_EXTERN_C __declspec(dllimport) long __stdcall InterlockedExchangeAdd(long volatile *Addend, long Value);
-#    define CV_XADD(addr, delta) (int)InterlockedExchangeAdd((long volatile*)addr, delta)
-#  else
-     CV_EXTERN_C long _InterlockedExchangeAdd (long volatile *Addend, long Value);
-#    pragma intrinsic(_InterlockedExchangeAdd)
-#    define CV_XADD(addr, delta) (int)_InterlockedExchangeAdd((long volatile*)addr, delta)
-#  endif
+#elif defined _MSC_VER && !defined RC_INVOKED
+#  define CV_XADD(addr, delta) (int)_InterlockedExchangeAdd((long volatile*)addr, delta)
 #else
    CV_INLINE CV_XADD(int* addr, int delta) { int tmp = *addr; *addr += delta; return tmp; }
+#endif
+
+
+/****************************************************************************************\
+*                                  CV_NORETURN attribute                                 *
+\****************************************************************************************/
+
+#ifndef CV_NORETURN
+#  if defined(__GNUC__)
+#    define CV_NORETURN __attribute__((__noreturn__))
+#  elif defined(_MSC_VER) && (_MSC_VER >= 1300)
+#    define CV_NORETURN __declspec(noreturn)
+#  else
+#    define CV_NORETURN /* nothing by default */
+#  endif
 #endif
 
 #endif // __OPENCV_CORE_CVDEF_H__

@@ -602,8 +602,8 @@ inline void elbp_(InputArray _src, OutputArray _dst, int radius, int neighbors) 
     dst.setTo(0);
     for(int n=0; n<neighbors; n++) {
         // sample points
-        float x = static_cast<float>(-radius * sin(2.0*CV_PI*n/static_cast<float>(neighbors)));
-        float y = static_cast<float>(radius * cos(2.0*CV_PI*n/static_cast<float>(neighbors)));
+        float x = static_cast<float>(radius * cos(2.0*CV_PI*n/static_cast<float>(neighbors)));
+        float y = static_cast<float>(-radius * sin(2.0*CV_PI*n/static_cast<float>(neighbors)));
         // relative indices
         int fx = static_cast<int>(floor(x));
         int fy = static_cast<int>(floor(y));
@@ -851,18 +851,18 @@ int LBPH::predict(InputArray _src) const {
 
 Ptr<FaceRecognizer> createEigenFaceRecognizer(int num_components, double threshold)
 {
-    return new Eigenfaces(num_components, threshold);
+    return makePtr<Eigenfaces>(num_components, threshold);
 }
 
 Ptr<FaceRecognizer> createFisherFaceRecognizer(int num_components, double threshold)
 {
-    return new Fisherfaces(num_components, threshold);
+    return makePtr<Fisherfaces>(num_components, threshold);
 }
 
 Ptr<FaceRecognizer> createLBPHFaceRecognizer(int radius, int neighbors,
                                              int grid_x, int grid_y, double threshold)
 {
-    return new LBPH(radius, neighbors, grid_x, grid_y, threshold);
+    return makePtr<LBPH>(radius, neighbors, grid_x, grid_y, threshold);
 }
 
 CV_INIT_ALGORITHM(Eigenfaces, "FaceRecognizer.Eigenfaces",
@@ -894,7 +894,7 @@ CV_INIT_ALGORITHM(LBPH, "FaceRecognizer.LBPH",
 
 bool initModule_contrib()
 {
-    Ptr<Algorithm> efaces = createEigenfaces_hidden(), ffaces = createFisherfaces_hidden(), lbph = createLBPH_hidden();
+    Ptr<Algorithm> efaces = createEigenfaces_ptr_hidden(), ffaces = createFisherfaces_ptr_hidden(), lbph = createLBPH_ptr_hidden();
     return efaces->info() != 0 && ffaces->info() != 0 && lbph->info() != 0;
 }
 

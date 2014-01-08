@@ -9,7 +9,10 @@ represented as vectors in a multidimensional space. All objects that implement t
 descriptor extractors inherit the
 :ocv:class:`DescriptorExtractor` interface.
 
+.. note::
 
+   * An example explaining keypoint extraction can be found at opencv_source_code/samples/cpp/descriptor_extractor_matcher.cpp
+   * An example on descriptor evaluation can be found at opencv_source_code/samples/cpp/detector_descriptor_evaluation.cpp
 
 DescriptorExtractor
 -------------------
@@ -32,6 +35,7 @@ Abstract base class for computing descriptors for image keypoints. ::
 
         virtual int descriptorSize() const = 0;
         virtual int descriptorType() const = 0;
+        virtual int defaultNorm() const = 0;
 
         static Ptr<DescriptorExtractor> create( const String& descriptorExtractorType );
 
@@ -82,9 +86,10 @@ The current implementation supports the following types of a descriptor extracto
 
  * ``"SIFT"`` -- :ocv:class:`SIFT`
  * ``"SURF"`` -- :ocv:class:`SURF`
- * ``"ORB"`` -- :ocv:class:`ORB`
- * ``"BRISK"`` -- :ocv:class:`BRISK`
  * ``"BRIEF"`` -- :ocv:class:`BriefDescriptorExtractor`
+ * ``"BRISK"`` -- :ocv:class:`BRISK`
+ * ``"ORB"`` -- :ocv:class:`ORB`
+ * ``"FREAK"`` -- :ocv:class:`FREAK`
 
 A combined format is also supported: descriptor extractor adapter name ( ``"Opponent"`` --
 :ocv:class:`OpponentColorDescriptorExtractor` ) + descriptor extractor name (see above),
@@ -110,6 +115,7 @@ them into a single color descriptor. ::
         virtual void write( FileStorage& ) const;
         virtual int descriptorSize() const;
         virtual int descriptorType() const;
+        virtual int defaultNorm() const;
     protected:
         ...
     };
@@ -137,8 +143,11 @@ Strecha C., Fua P. *BRIEF: Binary Robust Independent Elementary Features* ,
         virtual void write( FileStorage& ) const;
         virtual int descriptorSize() const;
         virtual int descriptorType() const;
+        virtual int defaultNorm() const;
     protected:
         ...
     };
 
+.. note::
 
+   * A complete BRIEF extractor sample can be found at opencv_source_code/samples/cpp/brief_match_test.cpp

@@ -26,7 +26,7 @@
 //
 //   * Redistribution's in binary form must reproduce the above copyright notice,
 //     this list of conditions and the following disclaimer in the documentation
-//     and/or other oclMaterials provided with the distribution.
+//     and/or other materials provided with the distribution.
 //
 //   * The name of the copyright holders may not be used to endorse or promote products
 //     derived from this software without specific prior written permission.
@@ -45,21 +45,14 @@
 //M*/
 
 #include "precomp.hpp"
-
 #include <functional>
 #include <iterator>
 #include <vector>
+#include <algorithm>
+#include "opencl_kernels.hpp"
+
 using namespace cv;
 using namespace cv::ocl;
-
-namespace cv
-{
-    namespace ocl
-    {
-        ////////////////////////////////////OpenCL kernel strings//////////////////////////
-        extern const char *brute_force_match;
-    }
-}
 
 static const int OPT_SIZE = 100;
 
@@ -244,7 +237,7 @@ static void matchDispatcher(const oclMat &query, const oclMat &train, const oclM
 {
     const oclMat zeroMask;
     const oclMat &tempMask = mask.data ? mask : zeroMask;
-    bool is_cpu = queryDeviceInfo<IS_CPU_DEVICE, bool>();
+    bool is_cpu = isCpuDevice();
     if (query.cols <= 64)
     {
         matchUnrolledCached<16, 64>(query, train, tempMask, trainIdx, distance, distType);
@@ -264,7 +257,7 @@ static void matchDispatcher(const oclMat &query, const oclMat *trains, int n, co
 {
     const oclMat zeroMask;
     const oclMat &tempMask = mask.data ? mask : zeroMask;
-    bool is_cpu = queryDeviceInfo<IS_CPU_DEVICE, bool>();
+    bool is_cpu = isCpuDevice();
     if (query.cols <= 64)
     {
         matchUnrolledCached<16, 64>(query, trains, n, tempMask, trainIdx, imgIdx, distance, distType);
@@ -285,7 +278,7 @@ static void matchDispatcher(const oclMat &query, const oclMat &train, float maxD
 {
     const oclMat zeroMask;
     const oclMat &tempMask = mask.data ? mask : zeroMask;
-    bool is_cpu = queryDeviceInfo<IS_CPU_DEVICE, bool>();
+    bool is_cpu = isCpuDevice();
     if (query.cols <= 64)
     {
         matchUnrolledCached<16, 64>(query, train, maxDistance, tempMask, trainIdx, distance, nMatches, distType);
@@ -468,7 +461,7 @@ static void calcDistanceDispatcher(const oclMat &query, const oclMat &train, con
 static void match2Dispatcher(const oclMat &query, const oclMat &train, const oclMat &mask,
                       const oclMat &trainIdx, const oclMat &distance, int distType)
 {
-    bool is_cpu = queryDeviceInfo<IS_CPU_DEVICE, bool>();
+    bool is_cpu = isCpuDevice();
     if (query.cols <= 64)
     {
         knn_matchUnrolledCached<16, 64>(query, train, mask, trainIdx, distance, distType);
@@ -683,7 +676,7 @@ void cv::ocl::BruteForceMatcher_OCL_base::matchCollection(const oclMat &query, c
     ensureSizeIsEnough(1, nQuery, CV_32S, imgIdx);
     ensureSizeIsEnough(1, nQuery, CV_32F, distance);
 
-    matchDispatcher(query, (const oclMat *)trainCollection.ptr(), trainCollection.cols, masks, trainIdx, imgIdx, distance, distType);
+    matchDispatcher(query, &trainCollection, trainCollection.cols, masks, trainIdx, imgIdx, distance, distType);
 
     return;
 }
@@ -975,14 +968,14 @@ void cv::ocl::BruteForceMatcher_OCL_base::knnMatch(const oclMat &query, std::vec
                 std::vector<DMatch> &localMatch = curMatches[queryIdx];
                 std::vector<DMatch> &globalMatch = matches[queryIdx];
 
-                for_each(localMatch.begin(), localMatch.end(), ImgIdxSetter(static_cast<int>(imgIdx)));
+                std::for_each(localMatch.begin(), localMatch.end(), ImgIdxSetter(static_cast<int>(imgIdx)));
 
                 temp.clear();
-                merge(globalMatch.begin(), globalMatch.end(), localMatch.begin(), localMatch.end(), back_inserter(temp));
+                std::merge(globalMatch.begin(), globalMatch.end(), localMatch.begin(), localMatch.end(), back_inserter(temp));
 
                 globalMatch.clear();
                 const size_t count = std::min((size_t)k, temp.size());
-                copy(temp.begin(), temp.begin() + count, back_inserter(globalMatch));
+                std::copy(temp.begin(), temp.begin() + count, back_inserter(globalMatch));
             }
         }
 
@@ -1080,7 +1073,7 @@ void cv::ocl::BruteForceMatcher_OCL_base::radiusMatchConvert(const Mat &trainIdx
             curMatches[i] = m;
         }
 
-        sort(curMatches.begin(), curMatches.end());
+        std::sort(curMatches.begin(), curMatches.end());
     }
 }
 
@@ -1207,7 +1200,7 @@ void cv::ocl::BruteForceMatcher_OCL_base::radiusMatchConvert(const Mat &trainIdx
             curMatches.push_back(m);
         }
 
-        sort(curMatches.begin(), curMatches.end());
+        std::sort(curMatches.begin(), curMatches.end());
     }
 }
 

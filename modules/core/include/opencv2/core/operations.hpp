@@ -186,7 +186,7 @@ Matx<_Tp,m,n> Matx<_Tp,m,n>::randn(_Tp a, _Tp b)
 }
 
 template<typename _Tp, int m, int n> inline
-Matx<_Tp, n, m> Matx<_Tp, m, n>::inv(int method) const
+Matx<_Tp, n, m> Matx<_Tp, m, n>::inv(int method, bool *p_is_ok /*= NULL*/) const
 {
     Matx<_Tp, n, m> b;
     bool ok;
@@ -197,6 +197,7 @@ Matx<_Tp, n, m> Matx<_Tp, m, n>::inv(int method) const
         Mat A(*this, false), B(b, false);
         ok = (invert(A, B, method) != 0);
     }
+    if( NULL != p_is_ok ) { *p_is_ok = ok; }
     return ok ? b : Matx<_Tp, n, m>::zeros();
 }
 
@@ -393,7 +394,9 @@ template<typename _Tp> static inline _Tp randu()
   return (_Tp)theRNG();
 }
 
+///////////////////////////////// Formatted string generation /////////////////////////////////
 
+CV_EXPORTS String format( const char* fmt, ... );
 
 ///////////////////////////////// Formatted output of cv::Mat /////////////////////////////////
 
@@ -435,7 +438,7 @@ int print(const std::vector<Point3_<_Tp> >& vec, FILE* stream = stdout)
 template<typename _Tp, int m, int n> static inline
 int print(const Matx<_Tp, m, n>& matx, FILE* stream = stdout)
 {
-    return print(Formatter::get()->format(matx), stream);
+    return print(Formatter::get()->format(cv::Mat(matx)), stream);
 }
 
 
@@ -445,14 +448,14 @@ int print(const Matx<_Tp, m, n>& matx, FILE* stream = stdout)
 template<typename _Tp> inline
 Ptr<_Tp> Algorithm::create(const String& name)
 {
-    return _create(name).ptr<_Tp>();
+    return _create(name).dynamicCast<_Tp>();
 }
 
 template<typename _Tp> inline
 void Algorithm::set(const char* _name, const Ptr<_Tp>& value)
 {
-    Ptr<Algorithm> algo_ptr = value. template ptr<cv::Algorithm>();
-    if (algo_ptr.empty()) {
+    Ptr<Algorithm> algo_ptr = value. template dynamicCast<cv::Algorithm>();
+    if (!algo_ptr) {
         CV_Error( Error::StsUnsupportedFormat, "unknown/unsupported Ptr type of the second parameter of the method Algorithm::set");
     }
     info()->set(this, _name, ParamType<Algorithm>::type, &algo_ptr);
@@ -468,7 +471,7 @@ template<typename _Tp> inline
 void Algorithm::setAlgorithm(const char* _name, const Ptr<_Tp>& value)
 {
     Ptr<Algorithm> algo_ptr = value. template ptr<cv::Algorithm>();
-    if (algo_ptr.empty()) {
+    if (!algo_ptr) {
         CV_Error( Error::StsUnsupportedFormat, "unknown/unsupported Ptr type of the second parameter of the method Algorithm::set");
     }
     info()->set(this, _name, ParamType<Algorithm>::type, &algo_ptr);

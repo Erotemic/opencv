@@ -25,7 +25,7 @@
 //
 //   * Redistribution's in binary form must reproduce the above copyright notice,
 //     this list of conditions and the following disclaimer in the documentation
-//     and/or other oclMaterials provided with the distribution.
+//     and/or other materials provided with the distribution.
 //
 //   * The name of the copyright holders may not be used to endorse or promote products
 //     derived from this software without specific prior written permission.
@@ -44,6 +44,7 @@
 //M*/
 
 #include "precomp.hpp"
+#include "opencl_kernels.hpp"
 
 using namespace cv;
 using namespace cv::ocl;
@@ -56,107 +57,6 @@ using namespace cv::ocl;
 
 static oclMat gauss_w_lut;
 static bool hog_device_cpu;
-/* pre-compute gaussian and interp_weight lookup tables if sigma is 4.0f */
-static const float gaussian_interp_lut[] =
-{
-    /* gaussian lut */
-    0.01831564f, 0.02926831f, 0.04393693f, 0.06196101f, 0.08208500f, 0.10215643f,
-    0.11943297f, 0.13117145f, 0.13533528f, 0.13117145f, 0.11943297f, 0.10215643f,
-    0.08208500f, 0.06196101f, 0.04393693f, 0.02926831f, 0.02926831f, 0.04677062f,
-    0.07021102f, 0.09901341f, 0.13117145f, 0.16324551f, 0.19085334f, 0.20961139f,
-    0.21626517f, 0.20961139f, 0.19085334f, 0.16324551f, 0.13117145f, 0.09901341f,
-    0.07021102f, 0.04677062f, 0.04393693f, 0.07021102f, 0.10539922f, 0.14863673f,
-    0.19691168f, 0.24506053f, 0.28650481f, 0.31466395f, 0.32465246f, 0.31466395f,
-    0.28650481f, 0.24506053f, 0.19691168f, 0.14863673f, 0.10539922f, 0.07021102f,
-    0.06196101f, 0.09901341f, 0.14863673f, 0.20961139f, 0.27768996f, 0.34559074f,
-    0.40403652f, 0.44374731f, 0.45783335f, 0.44374731f, 0.40403652f, 0.34559074f,
-    0.27768996f, 0.20961139f, 0.14863673f, 0.09901341f, 0.08208500f, 0.13117145f,
-    0.19691168f, 0.27768996f, 0.36787945f, 0.45783335f, 0.53526145f, 0.58786964f,
-    0.60653067f, 0.58786964f, 0.53526145f, 0.45783335f, 0.36787945f, 0.27768996f,
-    0.19691168f, 0.13117145f, 0.10215643f, 0.16324551f, 0.24506053f, 0.34559074f,
-    0.45783335f, 0.56978285f, 0.66614360f, 0.73161560f, 0.75483960f, 0.73161560f,
-    0.66614360f, 0.56978285f, 0.45783335f, 0.34559074f, 0.24506053f, 0.16324551f,
-    0.11943297f, 0.19085334f, 0.28650481f, 0.40403652f, 0.53526145f, 0.66614360f,
-    0.77880079f, 0.85534531f, 0.88249689f, 0.85534531f, 0.77880079f, 0.66614360f,
-    0.53526145f, 0.40403652f, 0.28650481f, 0.19085334f, 0.13117145f, 0.20961139f,
-    0.31466395f, 0.44374731f, 0.58786964f, 0.73161560f, 0.85534531f, 0.93941307f,
-    0.96923321f, 0.93941307f, 0.85534531f, 0.73161560f, 0.58786964f, 0.44374731f,
-    0.31466395f, 0.20961139f, 0.13533528f, 0.21626517f, 0.32465246f, 0.45783335f,
-    0.60653067f, 0.75483960f, 0.88249689f, 0.96923321f, 1.00000000f, 0.96923321f,
-    0.88249689f, 0.75483960f, 0.60653067f, 0.45783335f, 0.32465246f, 0.21626517f,
-    0.13117145f, 0.20961139f, 0.31466395f, 0.44374731f, 0.58786964f, 0.73161560f,
-    0.85534531f, 0.93941307f, 0.96923321f, 0.93941307f, 0.85534531f, 0.73161560f,
-    0.58786964f, 0.44374731f, 0.31466395f, 0.20961139f, 0.11943297f, 0.19085334f,
-    0.28650481f, 0.40403652f, 0.53526145f, 0.66614360f, 0.77880079f, 0.85534531f,
-    0.88249689f, 0.85534531f, 0.77880079f, 0.66614360f, 0.53526145f, 0.40403652f,
-    0.28650481f, 0.19085334f, 0.10215643f, 0.16324551f, 0.24506053f, 0.34559074f,
-    0.45783335f, 0.56978285f, 0.66614360f, 0.73161560f, 0.75483960f, 0.73161560f,
-    0.66614360f, 0.56978285f, 0.45783335f, 0.34559074f, 0.24506053f, 0.16324551f,
-    0.08208500f, 0.13117145f, 0.19691168f, 0.27768996f, 0.36787945f, 0.45783335f,
-    0.53526145f, 0.58786964f, 0.60653067f, 0.58786964f, 0.53526145f, 0.45783335f,
-    0.36787945f, 0.27768996f, 0.19691168f, 0.13117145f, 0.06196101f, 0.09901341f,
-    0.14863673f, 0.20961139f, 0.27768996f, 0.34559074f, 0.40403652f, 0.44374731f,
-    0.45783335f, 0.44374731f, 0.40403652f, 0.34559074f, 0.27768996f, 0.20961139f,
-    0.14863673f, 0.09901341f, 0.04393693f, 0.07021102f, 0.10539922f, 0.14863673f,
-    0.19691168f, 0.24506053f, 0.28650481f, 0.31466395f, 0.32465246f, 0.31466395f,
-    0.28650481f, 0.24506053f, 0.19691168f, 0.14863673f, 0.10539922f, 0.07021102f,
-    0.02926831f, 0.04677062f, 0.07021102f, 0.09901341f, 0.13117145f, 0.16324551f,
-    0.19085334f, 0.20961139f, 0.21626517f, 0.20961139f, 0.19085334f, 0.16324551f,
-    0.13117145f, 0.09901341f, 0.07021102f, 0.04677062f,
-    /* interp_weight lut */
-    0.00390625f, 0.01171875f, 0.01953125f, 0.02734375f, 0.03515625f, 0.04296875f,
-    0.05078125f, 0.05859375f, 0.05859375f, 0.05078125f, 0.04296875f, 0.03515625f,
-    0.02734375f, 0.01953125f, 0.01171875f, 0.00390625f, 0.01171875f, 0.03515625f,
-    0.05859375f, 0.08203125f, 0.10546875f, 0.12890625f, 0.15234375f, 0.17578125f,
-    0.17578125f, 0.15234375f, 0.12890625f, 0.10546875f, 0.08203125f, 0.05859375f,
-    0.03515625f, 0.01171875f, 0.01953125f, 0.05859375f, 0.09765625f, 0.13671875f,
-    0.17578125f, 0.21484375f, 0.25390625f, 0.29296875f, 0.29296875f, 0.25390625f,
-    0.21484375f, 0.17578125f, 0.13671875f, 0.09765625f, 0.05859375f, 0.01953125f,
-    0.02734375f, 0.08203125f, 0.13671875f, 0.19140625f, 0.24609375f, 0.30078125f,
-    0.35546875f, 0.41015625f, 0.41015625f, 0.35546875f, 0.30078125f, 0.24609375f,
-    0.19140625f, 0.13671875f, 0.08203125f, 0.02734375f, 0.03515625f, 0.10546875f,
-    0.17578125f, 0.24609375f, 0.31640625f, 0.38671875f, 0.45703125f, 0.52734375f,
-    0.52734375f, 0.45703125f, 0.38671875f, 0.31640625f, 0.24609375f, 0.17578125f,
-    0.10546875f, 0.03515625f, 0.04296875f, 0.12890625f, 0.21484375f, 0.30078125f,
-    0.38671875f, 0.47265625f, 0.55859375f, 0.64453125f, 0.64453125f, 0.55859375f,
-    0.47265625f, 0.38671875f, 0.30078125f, 0.21484375f, 0.12890625f, 0.04296875f,
-    0.05078125f, 0.15234375f, 0.25390625f, 0.35546875f, 0.45703125f, 0.55859375f,
-    0.66015625f, 0.76171875f, 0.76171875f, 0.66015625f, 0.55859375f, 0.45703125f,
-    0.35546875f, 0.25390625f, 0.15234375f, 0.05078125f, 0.05859375f, 0.17578125f,
-    0.29296875f, 0.41015625f, 0.52734375f, 0.64453125f, 0.76171875f, 0.87890625f,
-    0.87890625f, 0.76171875f, 0.64453125f, 0.52734375f, 0.41015625f, 0.29296875f,
-    0.17578125f, 0.05859375f, 0.05859375f, 0.17578125f, 0.29296875f, 0.41015625f,
-    0.52734375f, 0.64453125f, 0.76171875f, 0.87890625f, 0.87890625f, 0.76171875f,
-    0.64453125f, 0.52734375f, 0.41015625f, 0.29296875f, 0.17578125f, 0.05859375f,
-    0.05078125f, 0.15234375f, 0.25390625f, 0.35546875f, 0.45703125f, 0.55859375f,
-    0.66015625f, 0.76171875f, 0.76171875f, 0.66015625f, 0.55859375f, 0.45703125f,
-    0.35546875f, 0.25390625f, 0.15234375f, 0.05078125f, 0.04296875f, 0.12890625f,
-    0.21484375f, 0.30078125f, 0.38671875f, 0.47265625f, 0.55859375f, 0.64453125f,
-    0.64453125f, 0.55859375f, 0.47265625f, 0.38671875f, 0.30078125f, 0.21484375f,
-    0.12890625f, 0.04296875f, 0.03515625f, 0.10546875f, 0.17578125f, 0.24609375f,
-    0.31640625f, 0.38671875f, 0.45703125f, 0.52734375f, 0.52734375f, 0.45703125f,
-    0.38671875f, 0.31640625f, 0.24609375f, 0.17578125f, 0.10546875f, 0.03515625f,
-    0.02734375f, 0.08203125f, 0.13671875f, 0.19140625f, 0.24609375f, 0.30078125f,
-    0.35546875f, 0.41015625f, 0.41015625f, 0.35546875f, 0.30078125f, 0.24609375f,
-    0.19140625f, 0.13671875f, 0.08203125f, 0.02734375f, 0.01953125f, 0.05859375f,
-    0.09765625f, 0.13671875f, 0.17578125f, 0.21484375f, 0.25390625f, 0.29296875f,
-    0.29296875f, 0.25390625f, 0.21484375f, 0.17578125f, 0.13671875f, 0.09765625f,
-    0.05859375f, 0.01953125f, 0.01171875f, 0.03515625f, 0.05859375f, 0.08203125f,
-    0.10546875f, 0.12890625f, 0.15234375f, 0.17578125f, 0.17578125f, 0.15234375f,
-    0.12890625f, 0.10546875f, 0.08203125f, 0.05859375f, 0.03515625f, 0.01171875f,
-    0.00390625f, 0.01171875f, 0.01953125f, 0.02734375f, 0.03515625f, 0.04296875f,
-    0.05078125f, 0.05859375f, 0.05859375f, 0.05078125f, 0.04296875f, 0.03515625f,
-    0.02734375f, 0.01953125f, 0.01171875f, 0.00390625f
-};
-
-namespace cv
-{
-    namespace ocl
-    {
-        ///////////////////////////OpenCL kernel strings///////////////////////////
-        extern const char *objdetect_hog;
-    }
-}
 
 namespace cv
 {
@@ -176,11 +76,16 @@ namespace cv
                 int cdescr_width;
                 int cdescr_height;
 
+                // A shift value and type that allows qangle to be different
+                // sizes on different hardware
+                int qangle_step_shift;
+                int qangle_type;
+
                 void set_up_constants(int nbins, int block_stride_x, int block_stride_y,
                                       int nblocks_win_x, int nblocks_win_y);
 
                 void compute_hists(int nbins, int block_stride_x, int blovck_stride_y,
-                                   int height, int width, float sigma, const cv::ocl::oclMat &grad,
+                                   int height, int width, const cv::ocl::oclMat &grad,
                                    const cv::ocl::oclMat &qangle,
                                    const cv::ocl::oclMat &gauss_w_lut, cv::ocl::oclMat &block_hists);
 
@@ -216,11 +121,6 @@ namespace cv
 
 using namespace ::cv::ocl::device;
 
-static inline int divUp(int total, int grain)
-{
-    return (total + grain - 1) / grain;
-}
-
 cv::ocl::HOGDescriptor::HOGDescriptor(Size win_size_, Size block_size_, Size block_stride_,
                                       Size cell_size_, int nbins_, double win_sigma_,
                                       double threshold_L2hys_, bool gamma_correction_, int nlevels_)
@@ -254,10 +154,11 @@ cv::ocl::HOGDescriptor::HOGDescriptor(Size win_size_, Size block_size_, Size blo
 
     effect_size = Size(0, 0);
 
-	if (queryDeviceInfo<IS_CPU_DEVICE, bool>())
+    if (isCpuDevice())
         hog_device_cpu = true;
     else
         hog_device_cpu = false;
+
 }
 
 size_t cv::ocl::HOGDescriptor::getDescriptorSize() const
@@ -318,7 +219,7 @@ void cv::ocl::HOGDescriptor::init_buffer(const oclMat &img, Size win_stride)
         effect_size = img.size();
 
     grad.create(img.size(), CV_32FC2);
-    qangle.create(img.size(), CV_8UC2);
+    qangle.create(img.size(), hog::qangle_type);
 
     const size_t block_hist_size = getBlockHistogramSize();
     const Size blocks_per_img = numPartsWithin(img.size(), block_size, block_stride);
@@ -328,10 +229,18 @@ void cv::ocl::HOGDescriptor::init_buffer(const oclMat &img, Size win_stride)
     Size wins_per_img = numPartsWithin(img.size(), win_size, win_stride);
     labels.create(1, wins_per_img.area(), CV_8U);
 
-    std::vector<float> v_lut = std::vector<float>(gaussian_interp_lut, gaussian_interp_lut +
-        sizeof(gaussian_interp_lut) / sizeof(gaussian_interp_lut[0]));
-    Mat m_lut(v_lut);
-    gauss_w_lut.upload(m_lut.reshape(1,1));
+    float sigma = getWinSigma();
+    float scale = 1.f / (2.f * sigma * sigma);
+    Mat gaussian_lut(1, 512, CV_32FC1);
+    int idx = 0;
+    for(int i=-8; i<8; i++)
+        for(int j=-8; j<8; j++)
+            gaussian_lut.at<float>(idx++) = std::exp(-(j * j + i * i) * scale);
+    for(int i=-8; i<8; i++)
+        for(int j=-8; j<8; j++)
+            gaussian_lut.at<float>(idx++) = (8.f - fabs(j + 0.5f)) * (8.f - fabs(i + 0.5f)) / 64.f;
+
+    gauss_w_lut.upload(gaussian_lut);
 }
 
 void cv::ocl::HOGDescriptor::computeGradient(const oclMat &img, oclMat &grad, oclMat &qangle)
@@ -358,7 +267,7 @@ void cv::ocl::HOGDescriptor::computeBlockHistograms(const oclMat &img)
     computeGradient(img, this->grad, this->qangle);
 
     hog::compute_hists(nbins, block_stride.width, block_stride.height, effect_size.height,
-        effect_size.width, (float)getWinSigma(), grad, qangle, gauss_w_lut, block_hists);
+        effect_size.width, grad, qangle, gauss_w_lut, block_hists);
 
     hog::normalize_hists(nbins, block_stride.width, block_stride.height, effect_size.height,
         effect_size.width, block_hists, (float)threshold_L2hys);
@@ -1703,11 +1612,21 @@ void cv::ocl::device::hog::set_up_constants(int nbins,
 
     int descr_size = descr_width * nblocks_win_y;
     cdescr_size = descr_size;
+
+    qangle_type = CV_8UC2;
+    qangle_step_shift = 0;
+    // Some Intel devices have low single-byte access performance,
+    // so we change the datatype here.
+    if (Context::getContext()->supportsFeature(FEATURE_CL_INTEL_DEVICE))
+    {
+        qangle_type = CV_32SC2;
+        qangle_step_shift = 2;
+    }
 }
 
 void cv::ocl::device::hog::compute_hists(int nbins,
                                          int block_stride_x, int block_stride_y,
-                                         int height, int width, float sigma,
+                                         int height, int width,
                                          const cv::ocl::oclMat &grad,
                                          const cv::ocl::oclMat &qangle,
                                          const cv::ocl::oclMat &gauss_w_lut,
@@ -1715,19 +1634,16 @@ void cv::ocl::device::hog::compute_hists(int nbins,
 {
     Context *clCxt = Context::getContext();
     std::vector< std::pair<size_t, const void *> > args;
-    String kernelName = (sigma == 4.0f) ? "compute_hists_lut_kernel" :
-        "compute_hists_kernel";
+    String kernelName = "compute_hists_lut_kernel";
 
     int img_block_width = (width - CELLS_PER_BLOCK_X * CELL_WIDTH + block_stride_x)
         / block_stride_x;
     int img_block_height = (height - CELLS_PER_BLOCK_Y * CELL_HEIGHT + block_stride_y)
         / block_stride_y;
+    int blocks_total = img_block_width * img_block_height;
 
     int grad_quadstep = grad.step >> 2;
-    int qangle_step = qangle.step;
-
-    // Precompute gaussian spatial window parameter
-    float scale = 1.f / (2.f * sigma * sigma);
+    int qangle_step = qangle.step >> qangle_step_shift;
 
     int blocks_in_group = 4;
     size_t localThreads[3] = { blocks_in_group * 24, 2, 1 };
@@ -1736,27 +1652,38 @@ void cv::ocl::device::hog::compute_hists(int nbins,
 
     int hists_size = (nbins * CELLS_PER_BLOCK_X * CELLS_PER_BLOCK_Y * 12) * sizeof(float);
     int final_hists_size = (nbins * CELLS_PER_BLOCK_X * CELLS_PER_BLOCK_Y) * sizeof(float);
-    int smem = hists_size + final_hists_size;
 
-    args.push_back( std::make_pair( sizeof(cl_int), (void *)&width));
+    int smem = (hists_size + final_hists_size) * blocks_in_group;
+
     args.push_back( std::make_pair( sizeof(cl_int), (void *)&cblock_stride_x));
     args.push_back( std::make_pair( sizeof(cl_int), (void *)&cblock_stride_y));
     args.push_back( std::make_pair( sizeof(cl_int), (void *)&cnbins));
     args.push_back( std::make_pair( sizeof(cl_int), (void *)&cblock_hist_size));
     args.push_back( std::make_pair( sizeof(cl_int), (void *)&img_block_width));
+    args.push_back( std::make_pair( sizeof(cl_int), (void *)&blocks_in_group));
+    args.push_back( std::make_pair( sizeof(cl_int), (void *)&blocks_total));
     args.push_back( std::make_pair( sizeof(cl_int), (void *)&grad_quadstep));
     args.push_back( std::make_pair( sizeof(cl_int), (void *)&qangle_step));
     args.push_back( std::make_pair( sizeof(cl_mem), (void *)&grad.data));
     args.push_back( std::make_pair( sizeof(cl_mem), (void *)&qangle.data));
-    if (kernelName.compare("compute_hists_lut_kernel") == 0)
-        args.push_back( std::make_pair( sizeof(cl_mem), (void *)&gauss_w_lut.data));
-    else
-        args.push_back( std::make_pair( sizeof(cl_float), (void *)&scale));
+    args.push_back( std::make_pair( sizeof(cl_mem), (void *)&gauss_w_lut.data));
     args.push_back( std::make_pair( sizeof(cl_mem), (void *)&block_hists.data));
     args.push_back( std::make_pair( smem, (void *)NULL));
 
-    openCLExecuteKernel2(clCxt, &objdetect_hog, kernelName, globalThreads,
-        localThreads, args, -1, -1);
+    if(hog_device_cpu)
+    {
+        openCLExecuteKernel2(clCxt, &objdetect_hog, kernelName, globalThreads,
+            localThreads, args, -1, -1, "-D CPU");
+    }
+    else
+    {
+        cl_kernel kernel = openCLGetKernelFromSource(clCxt, &objdetect_hog, kernelName);
+        size_t wave_size = queryWaveFrontSize(kernel);
+        char opt[32] = {0};
+        sprintf(opt, "-D WAVE_SIZE=%d", (int)wave_size);
+        openCLExecuteKernel2(clCxt, &objdetect_hog, kernelName, globalThreads,
+            localThreads, args, -1, -1, opt);
+    }
 }
 
 void cv::ocl::device::hog::normalize_hists(int nbins,
@@ -1770,12 +1697,13 @@ void cv::ocl::device::hog::normalize_hists(int nbins,
     String kernelName;
 
     int block_hist_size = nbins * CELLS_PER_BLOCK_X * CELLS_PER_BLOCK_Y;
-    int nthreads = power_2up(block_hist_size);
-
-    int img_block_width = (width - CELLS_PER_BLOCK_X * CELL_WIDTH + block_stride_x) / block_stride_x;
-    int img_block_height = (height - CELLS_PER_BLOCK_Y * CELL_HEIGHT + block_stride_y) / block_stride_y;
-    size_t globalThreads[3] = { img_block_width * nthreads, img_block_height, 1 };
-    size_t localThreads[3] = { nthreads, 1, 1  };
+    int img_block_width = (width - CELLS_PER_BLOCK_X * CELL_WIDTH + block_stride_x)
+        / block_stride_x;
+    int img_block_height = (height - CELLS_PER_BLOCK_Y * CELL_HEIGHT + block_stride_y)
+        / block_stride_y;
+    int nthreads;
+    size_t globalThreads[3] = { 1, 1, 1  };
+    size_t localThreads[3] = { 1, 1, 1  };
 
     if ( nbins == 9 )
     {
@@ -1814,9 +1742,9 @@ void cv::ocl::device::hog::normalize_hists(int nbins,
     else
     {
         cl_kernel kernel = openCLGetKernelFromSource(clCxt, &objdetect_hog, kernelName);
-        int wave_size = queryDeviceInfo<WAVEFRONT_SIZE, int>(kernel);
+        size_t wave_size = queryWaveFrontSize(kernel);
         char opt[32] = {0};
-        sprintf(opt, "-D WAVE_SIZE=%d", wave_size);
+        sprintf(opt, "-D WAVE_SIZE=%d", (int)wave_size);
         openCLExecuteKernel2(clCxt, &objdetect_hog, kernelName, globalThreads,
                              localThreads, args, -1, -1, opt);
     }
@@ -1883,9 +1811,9 @@ void cv::ocl::device::hog::classify_hists(int win_height, int win_width,
     else
     {
         cl_kernel kernel = openCLGetKernelFromSource(clCxt, &objdetect_hog, kernelName);
-        int wave_size = queryDeviceInfo<WAVEFRONT_SIZE, int>(kernel);
+        size_t wave_size = queryWaveFrontSize(kernel);
         char opt[32] = {0};
-        sprintf(opt, "-D WAVE_SIZE=%d", wave_size);
+        sprintf(opt, "-D WAVE_SIZE=%d", (int)wave_size);
         openCLExecuteKernel2(clCxt, &objdetect_hog, kernelName, globalThreads,
                              localThreads, args, -1, -1, opt);
     }
@@ -1980,7 +1908,7 @@ void cv::ocl::device::hog::compute_gradients_8UC1(int height, int width,
     char correctGamma = (correct_gamma) ? 1 : 0;
     int img_step = img.step;
     int grad_quadstep = grad.step >> 3;
-    int qangle_step = qangle.step >> 1;
+    int qangle_step = qangle.step >> (1 + qangle_step_shift);
 
     args.push_back( std::make_pair( sizeof(cl_int), (void *)&height));
     args.push_back( std::make_pair( sizeof(cl_int), (void *)&width));
@@ -2015,7 +1943,7 @@ void cv::ocl::device::hog::compute_gradients_8UC4(int height, int width,
     char correctGamma = (correct_gamma) ? 1 : 0;
     int img_step = img.step >> 2;
     int grad_quadstep = grad.step >> 3;
-    int qangle_step = qangle.step >> 1;
+    int qangle_step = qangle.step >> (1 + qangle_step_shift);
 
     args.push_back( std::make_pair( sizeof(cl_int), (void *)&height));
     args.push_back( std::make_pair( sizeof(cl_int), (void *)&width));

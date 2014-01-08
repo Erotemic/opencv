@@ -28,12 +28,14 @@
     defined(HAVE_CMU1394)      || \
     defined(HAVE_MIL)          || \
     defined(HAVE_QUICKTIME)    || \
+    defined(HAVE_QTKIT)        || \
     defined(HAVE_UNICAP)       || \
     defined(HAVE_PVAPI)        || \
     defined(HAVE_OPENNI)       || \
     defined(HAVE_XIMEA)        || \
     defined(HAVE_AVFOUNDATION) || \
     defined(HAVE_GIGE_API)     || \
+    defined(HAVE_INTELPERC)    || \
     (0)
     //defined(HAVE_ANDROID_NATIVE_CAMERA) ||   - enable after #1193
 #  define BUILD_WITH_CAMERA_SUPPORT 1
@@ -44,6 +46,7 @@
 #if defined(HAVE_XINE)         || \
     defined(HAVE_GSTREAMER)    || \
     defined(HAVE_QUICKTIME)    || \
+    defined(HAVE_QTKIT)        || \
     defined(HAVE_AVFOUNDATION) || \
     /*defined(HAVE_OPENNI)     || too specialized */ \
     defined(HAVE_FFMPEG)       || \
@@ -56,6 +59,7 @@
 #if /*defined(HAVE_XINE)       || */\
     defined(HAVE_GSTREAMER)    || \
     defined(HAVE_QUICKTIME)    || \
+    defined(HAVE_QTKIT)        || \
     defined(HAVE_AVFOUNDATION) || \
     defined(HAVE_FFMPEG)       || \
     defined(HAVE_MSMF)

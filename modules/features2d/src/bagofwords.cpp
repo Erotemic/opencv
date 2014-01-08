@@ -72,7 +72,7 @@ const std::vector<Mat>& BOWTrainer::getDescriptors() const
     return descriptors;
 }
 
-int BOWTrainer::descripotorsCount() const
+int BOWTrainer::descriptorsCount() const
 {
     return descriptors.empty() ? 0 : size;
 }
@@ -176,10 +176,10 @@ void BOWImgDescriptorExtractor::compute( const Mat& image, std::vector<KeyPoint>
 
     // Normalize image descriptor.
     imgDescriptor /= descriptors.rows;
-	
+
     // Add the descriptors of image keypoints
     if (_descriptors) {
-        *_descriptors = descriptors.clone(); 
+        *_descriptors = descriptors.clone();
     }
 }
 

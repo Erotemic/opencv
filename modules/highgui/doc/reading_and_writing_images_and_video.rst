@@ -223,6 +223,15 @@ The class provides C++ API for capturing video from cameras or for reading video
 
 .. note:: In C API the black-box structure ``CvCapture`` is used instead of ``VideoCapture``.
 
+.. note::
+
+   * A basic sample on using the VideoCapture interface can be found at opencv_source_code/samples/cpp/starter_video.cpp
+   * Another basic video processing sample can be found at opencv_source_code/samples/cpp/video_dmtx.cpp
+
+   * (Python) A basic sample on using the VideoCapture interface can be found at opencv_source_code/samples/python2/video.py
+   * (Python) Another basic video processing sample can be found at opencv_source_code/samples/python2/video_dmtx.py
+   * (Python) A multi threaded video processing sample can be found at opencv_source_code/samples/python2/video_threaded.py
+
 
 VideoCapture::VideoCapture
 ------------------------------
@@ -241,7 +250,7 @@ VideoCapture constructors.
 .. ocv:cfunction:: CvCapture* cvCaptureFromCAM( int device )
 .. ocv:cfunction:: CvCapture* cvCaptureFromFile( const char* filename )
 
-    :param filename: name of the opened video file (eg. video.avi) or image sequence (eg. img%02d.jpg)
+    :param filename: name of the opened video file (eg. video.avi) or image sequence (eg. img_%02d.jpg, which will read samples like img_00.jpg, img_01.jpg, img_02.jpg, ...)
 
     :param device: id of the opened video capturing device (i.e. a camera index). If there is a single camera connected, just pass 0.
 
@@ -258,7 +267,7 @@ Open video file or a capturing device for video capturing
 .. ocv:pyfunction:: cv2.VideoCapture.open(filename) -> retval
 .. ocv:pyfunction:: cv2.VideoCapture.open(device) -> retval
 
-    :param filename: name of the opened video file (eg. video.avi) or image sequence (eg. img%02d.jpg)
+    :param filename: name of the opened video file (eg. video.avi) or image sequence (eg. img_%02d.jpg, which will read samples like img_00.jpg, img_01.jpg, img_02.jpg, ...)
 
     :param device: id of the opened video capturing device (i.e. a camera index).
 
@@ -304,14 +313,14 @@ The methods/functions grab the next frame from video file or camera and return t
 
 The primary use of the function is in multi-camera environments, especially when the cameras do not have hardware synchronization. That is, you call ``VideoCapture::grab()`` for each camera and after that call the slower method ``VideoCapture::retrieve()`` to decode and get frame from each camera. This way the overhead on demosaicing or motion jpeg decompression etc. is eliminated and the retrieved frames from different cameras will be closer in time.
 
-Also, when a connected camera is multi-head (for example, a stereo camera or a Kinect device), the correct way of retrieving data from it is to call `VideoCapture::grab` first and then call :ocv:func:`VideoCapture::retrieve` one or more times with different values of the ``channel`` parameter. See http://code.opencv.org/projects/opencv/repository/revisions/master/entry/samples/cpp/kinect_maps.cpp
+Also, when a connected camera is multi-head (for example, a stereo camera or a Kinect device), the correct way of retrieving data from it is to call `VideoCapture::grab` first and then call :ocv:func:`VideoCapture::retrieve` one or more times with different values of the ``channel`` parameter. See https://github.com/Itseez/opencv/tree/master/samples/cpp/openni_capture.cpp
 
 
 VideoCapture::retrieve
 ----------------------
 Decodes and returns the grabbed video frame.
 
-.. ocv:function:: bool VideoCapture::retrieve( Mat& image, int flag=0 )
+.. ocv:function:: bool VideoCapture::retrieve( OutputArray image, int flag=0 )
 
 .. ocv:pyfunction:: cv2.VideoCapture.retrieve([image[, flag]]) -> retval, image
 
@@ -328,7 +337,9 @@ Grabs, decodes and returns the next video frame.
 
 .. ocv:function:: VideoCapture& VideoCapture::operator >> (Mat& image)
 
-.. ocv:function:: bool VideoCapture::read(Mat& image)
+.. ocv:function:: VideoCapture& VideoCapture::operator >> (UMat& image)
+
+.. ocv:function:: bool VideoCapture::read(OutputArray image)
 
 .. ocv:pyfunction:: cv2.VideoCapture.read([image]) -> retval, image
 
@@ -530,4 +541,3 @@ Writes the next video frame
     :param image: The written frame
 
 The functions/methods write the specified image to video file. It must have the same size as has been specified when opening the video writer.
-

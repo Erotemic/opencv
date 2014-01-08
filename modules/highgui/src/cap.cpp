@@ -49,10 +49,10 @@
 namespace cv
 {
 
-template<> void Ptr<CvCapture>::delete_obj()
+template<> void DefaultDeleter<CvCapture>::operator ()(CvCapture* obj) const
 { cvReleaseCapture(&obj); }
 
-template<> void Ptr<CvVideoWriter>::delete_obj()
+template<> void DefaultDeleter<CvVideoWriter>::operator ()(CvVideoWriter* obj) const
 { cvReleaseVideoWriter(&obj); }
 
 }
@@ -135,7 +135,7 @@ CV_IMPL CvCapture * cvCreateCameraCapture (int index)
 #ifdef HAVE_MIL
         CV_CAP_MIL,
 #endif
-#ifdef HAVE_QUICKTIME
+#if defined(HAVE_QUICKTIME) || defined(HAVE_QTKIT)
         CV_CAP_QT,
 #endif
 #ifdef HAVE_UNICAP
@@ -155,6 +155,9 @@ CV_IMPL CvCapture * cvCreateCameraCapture (int index)
 #endif
 #ifdef HAVE_GIGE_API
         CV_CAP_GIGANETIX,
+#endif
+#ifdef HAVE_INTELPERC
+        CV_CAP_INTELPERC,
 #endif
         -1
     };
@@ -185,6 +188,7 @@ CV_IMPL CvCapture * cvCreateCameraCapture (int index)
     defined(HAVE_CMU1394)      || \
     defined(HAVE_MIL)          || \
     defined(HAVE_QUICKTIME)    || \
+    defined(HAVE_QTKIT)        || \
     defined(HAVE_UNICAP)       || \
     defined(HAVE_PVAPI)        || \
     defined(HAVE_OPENNI)       || \
@@ -192,6 +196,7 @@ CV_IMPL CvCapture * cvCreateCameraCapture (int index)
     defined(HAVE_AVFOUNDATION) || \
     defined(HAVE_ANDROID_NATIVE_CAMERA) || \
     defined(HAVE_GIGE_API) || \
+    defined(HAVE_INTELPERC)    || \
     (0)
         // local variable to memorize the captured device
         CvCapture *capture;
@@ -277,7 +282,7 @@ CV_IMPL CvCapture * cvCreateCameraCapture (int index)
             break;
 #endif
 
-#ifdef HAVE_QUICKTIME
+#if defined(HAVE_QUICKTIME) || defined(HAVE_QTKIT)
         case CV_CAP_QT:
             capture = cvCreateCameraCapture_QT (index);
             if (capture)
@@ -341,6 +346,13 @@ CV_IMPL CvCapture * cvCreateCameraCapture (int index)
         break; // CV_CAP_GIGANETIX
 #endif
 
+#ifdef HAVE_INTELPERC
+        case CV_CAP_INTELPERC:
+            capture = cvCreateCameraCapture_IntelPerC(index);
+            if (capture)
+                return capture;
+        break; // CV_CAP_INTEL_PERC
+#endif
         }
     }
 
@@ -379,7 +391,7 @@ CV_IMPL CvCapture * cvCreateFileCapture (const char * filename)
         result = cvCreateCapture_GStreamer (CV_CAP_GSTREAMER_FILE, filename);
 #endif
 
-#ifdef HAVE_QUICKTIME
+#if defined(HAVE_QUICKTIME) || defined(HAVE_QTKIT)
     if (! result)
         result = cvCreateFileCapture_QT (filename);
 #endif
@@ -437,7 +449,7 @@ CV_IMPL CvVideoWriter* cvCreateVideoWriter( const char* filename, int fourcc,
         result = cvCreateVideoWriter_AVFoundation(filename, fourcc, fps, frameSize, is_color);
 #endif
 
-#ifdef HAVE_QUICKTIME
+#if defined(HAVE_QUICKTIME) || defined(HAVE_QTKIT)
     if(!result)
         result = cvCreateVideoWriter_QT(filename, fourcc, fps, frameSize, is_color);
 #endif
@@ -491,14 +503,14 @@ VideoCapture::~VideoCapture()
 bool VideoCapture::open(const String& filename)
 {
     if (isOpened()) release();
-    cap = cvCreateFileCapture(filename.c_str());
+    cap.reset(cvCreateFileCapture(filename.c_str()));
     return isOpened();
 }
 
 bool VideoCapture::open(int device)
 {
     if (isOpened()) release();
-    cap = cvCreateCameraCapture(device);
+    cap.reset(cvCreateCameraCapture(device));
     return isOpened();
 }
 
@@ -514,7 +526,7 @@ bool VideoCapture::grab()
     return cvGrabFrame(cap) != 0;
 }
 
-bool VideoCapture::retrieve(Mat& image, int channel)
+bool VideoCapture::retrieve(OutputArray image, int channel)
 {
     IplImage* _img = cvRetrieveFrame(cap, channel);
     if( !_img )
@@ -523,7 +535,7 @@ bool VideoCapture::retrieve(Mat& image, int channel)
         return false;
     }
     if(_img->origin == IPL_ORIGIN_TL)
-        image = cv::cvarrToMat(_img);
+        cv::cvarrToMat(_img).copyTo(image);
     else
     {
         Mat temp = cv::cvarrToMat(_img);
@@ -532,7 +544,7 @@ bool VideoCapture::retrieve(Mat& image, int channel)
     return true;
 }
 
-bool VideoCapture::read(Mat& image)
+bool VideoCapture::read(OutputArray image)
 {
     if(grab())
         retrieve(image);
@@ -542,6 +554,12 @@ bool VideoCapture::read(Mat& image)
 }
 
 VideoCapture& VideoCapture::operator >> (Mat& image)
+{
+    read(image);
+    return *this;
+}
+
+VideoCapture& VideoCapture::operator >> (UMat& image)
 {
     read(image);
     return *this;
@@ -577,7 +595,7 @@ VideoWriter::~VideoWriter()
 
 bool VideoWriter::open(const String& filename, int _fourcc, double fps, Size frameSize, bool isColor)
 {
-    writer = cvCreateVideoWriter(filename.c_str(), _fourcc, fps, frameSize, isColor);
+    writer.reset(cvCreateVideoWriter(filename.c_str(), _fourcc, fps, frameSize, isColor));
     return isOpened();
 }
 

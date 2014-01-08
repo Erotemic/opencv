@@ -25,7 +25,7 @@
 //
 //   * Redistribution's in binary form must reproduce the above copyright notice,
 //     this list of conditions and the following disclaimer in the documentation
-//     and/or other oclMaterials provided with the distribution.
+//     and/or other materials provided with the distribution.
 //
 //   * The name of the copyright holders may not be used to endorse or promote products
 //     derived from this software without specific prior written permission.
@@ -43,37 +43,43 @@
 //
 //M*/
 
-#include "precomp.hpp"
+#include "test_precomp.hpp"
+
 using namespace std;
-#ifdef HAVE_CLAMDFFT
+
 ////////////////////////////////////////////////////////////////////////////
 // Dft
-PARAM_TEST_CASE(Dft, cv::Size, int)
+
+PARAM_TEST_CASE(Dft, cv::Size, int, bool)
 {
     cv::Size dft_size;
     int	 dft_flags;
+    bool doubleFP;
+
     virtual void SetUp()
     {
         dft_size  = GET_PARAM(0);
         dft_flags = GET_PARAM(1);
+        doubleFP = GET_PARAM(2);
     }
 };
 
-TEST_P(Dft, C2C)
+OCL_TEST_P(Dft, C2C)
 {
-    cv::Mat a = randomMat(dft_size, CV_32FC2, 0.0, 100.0);
+    cv::Mat a = randomMat(dft_size, doubleFP ? CV_64FC2 : CV_32FC2, 0.0, 100.0);
     cv::Mat b_gold;
 
     cv::ocl::oclMat d_b;
 
     cv::dft(a, b_gold, dft_flags);
     cv::ocl::dft(cv::ocl::oclMat(a), d_b, a.size(), dft_flags);
+
     EXPECT_MAT_NEAR(b_gold, cv::Mat(d_b), a.size().area() * 1e-4);
 }
 
-TEST_P(Dft, R2C)
+OCL_TEST_P(Dft, R2C)
 {
-    cv::Mat a = randomMat(dft_size, CV_32FC1, 0.0, 100.0);
+    cv::Mat a = randomMat(dft_size, doubleFP ? CV_64FC1 : CV_32FC1, 0.0, 100.0);
     cv::Mat b_gold, b_gold_roi;
 
     cv::ocl::oclMat d_b, d_c;
@@ -88,9 +94,9 @@ TEST_P(Dft, R2C)
     EXPECT_MAT_NEAR(b_gold_roi, cv::Mat(d_b), a.size().area() * 1e-4);
 }
 
-TEST_P(Dft, R2CthenC2R)
+OCL_TEST_P(Dft, R2CthenC2R)
 {
-    cv::Mat a = randomMat(dft_size, CV_32FC1, 0.0, 10.0);
+    cv::Mat a = randomMat(dft_size, doubleFP ? CV_64FC1 : CV_32FC1, 0.0, 10.0);
 
     cv::ocl::oclMat d_b, d_c;
     cv::ocl::dft(cv::ocl::oclMat(a), d_b, a.size(), 0);
@@ -98,10 +104,9 @@ TEST_P(Dft, R2CthenC2R)
     EXPECT_MAT_NEAR(a, d_c, a.size().area() * 1e-4);
 }
 
-
 INSTANTIATE_TEST_CASE_P(OCL_ImgProc, Dft, testing::Combine(
                             testing::Values(cv::Size(2, 3), cv::Size(5, 4), cv::Size(25, 20), cv::Size(512, 1), cv::Size(1024, 768)),
-                            testing::Values(0, (int)cv::DFT_ROWS, (int)cv::DFT_SCALE) ));
+                            testing::Values(0, (int)cv::DFT_ROWS, (int)cv::DFT_SCALE), testing::Bool()));
 
 ////////////////////////////////////////////////////////////////////////////
 // MulSpectrums
@@ -119,12 +124,12 @@ PARAM_TEST_CASE(MulSpectrums, cv::Size, DftFlags, bool)
         flag  = GET_PARAM(1);
         ccorr = GET_PARAM(2);
 
-        a = randomMat(size, CV_32FC2);
-        b = randomMat(size, CV_32FC2);
+        a = randomMat(size, CV_32FC2, -100, 100, false);
+        b = randomMat(size, CV_32FC2, -100, 100, false);
     }
 };
 
-TEST_P(MulSpectrums, Simple)
+OCL_TEST_P(MulSpectrums, Simple)
 {
     cv::ocl::oclMat c;
     cv::ocl::mulSpectrums(cv::ocl::oclMat(a), cv::ocl::oclMat(b), c, flag, 1.0, ccorr);
@@ -135,7 +140,7 @@ TEST_P(MulSpectrums, Simple)
     EXPECT_MAT_NEAR(c_gold, c, 1e-2);
 }
 
-TEST_P(MulSpectrums, Scaled)
+OCL_TEST_P(MulSpectrums, Scaled)
 {
     float scale = 1.f / size.area();
 
@@ -219,7 +224,7 @@ PARAM_TEST_CASE(Convolve_DFT, cv::Size, KSize, Ccorr)
     }
 };
 
-TEST_P(Convolve_DFT, Accuracy)
+OCL_TEST_P(Convolve_DFT, Accuracy)
 {
     cv::Mat src = randomMat(size, CV_32FC1, 0.0, 100.0);
     cv::Mat kernel = randomMat(cv::Size(ksize, ksize), CV_32FC1, 0.0, 1.0);
@@ -236,5 +241,4 @@ TEST_P(Convolve_DFT, Accuracy)
 INSTANTIATE_TEST_CASE_P(OCL_ImgProc, Convolve_DFT, testing::Combine(
     DIFFERENT_CONVOLVE_SIZES,
     testing::Values(KSize(19), KSize(23), KSize(45)),
-    testing::Values(Ccorr(true)/*, Ccorr(false)*/))); // false ccorr cannot pass for some instances
-#endif // HAVE_CLAMDFFT
+    testing::Values(Ccorr(true)/*, Ccorr(false)*/))); // TODO false ccorr cannot pass for some instances

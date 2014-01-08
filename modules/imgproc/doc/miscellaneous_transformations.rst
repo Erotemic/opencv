@@ -476,6 +476,12 @@ In this mode, the complexity is still linear.
 That is, the function provides a very fast way to compute the Voronoi diagram for a binary image.
 Currently, the second variant can use only the approximate distance transform algorithm, i.e. ``maskSize=CV_DIST_MASK_PRECISE`` is not supported yet.
 
+.. note::
+
+   * An example on using the distance transform can be found at opencv_source_code/samples/cpp/distrans.cpp
+
+   * (Python) An example on using the distance transform can be found at opencv_source/samples/python2/distrans.py
+
 floodFill
 ---------
 Fills a connected component with the given color.
@@ -574,11 +580,15 @@ where
 *
     Color/brightness of the seed point in case of a fixed range.
 
-Use these functions to either mark a connected component with the specified color in-place, or build a mask and then extract the contour, or copy the region to another image, and so on. Various modes of the function are demonstrated in the ``floodfill.cpp`` sample.
+Use these functions to either mark a connected component with the specified color in-place, or build a mask and then extract the contour, or copy the region to another image, and so on.
 
 .. seealso:: :ocv:func:`findContours`
 
+.. note::
 
+   * An example using the FloodFill technique can be found at opencv_source_code/samples/cpp/ffilldemo.cpp
+
+   * (Python) An example using the FloodFill technique can be found at opencv_source_code/samples/python2/floodfill.cpp
 
 integral
 --------
@@ -586,15 +596,15 @@ Calculates the integral of an image.
 
 .. ocv:function:: void integral( InputArray src, OutputArray sum, int sdepth=-1 )
 
-.. ocv:function:: void integral( InputArray src, OutputArray sum, OutputArray sqsum, int sdepth=-1 )
+.. ocv:function:: void integral( InputArray src, OutputArray sum, OutputArray sqsum, int sdepth=-1, int sqdepth=-1 )
 
-.. ocv:function:: void integral( InputArray src, OutputArray sum, OutputArray sqsum, OutputArray tilted, int sdepth=-1 )
+.. ocv:function:: void integral( InputArray src, OutputArray sum, OutputArray sqsum, OutputArray tilted, int sdepth=-1, int sqdepth=-1 )
 
 .. ocv:pyfunction:: cv2.integral(src[, sum[, sdepth]]) -> sum
 
-.. ocv:pyfunction:: cv2.integral2(src[, sum[, sqsum[, sdepth]]]) -> sum, sqsum
+.. ocv:pyfunction:: cv2.integral2(src[, sum[, sqsum[, sdepth[, sqdepth]]]]) -> sum, sqsum
 
-.. ocv:pyfunction:: cv2.integral3(src[, sum[, sqsum[, tilted[, sdepth]]]]) -> sum, sqsum, tilted
+.. ocv:pyfunction:: cv2.integral3(src[, sum[, sqsum[, tilted[, sdepth[, sqdepth]]]]]) -> sum, sqsum, tilted
 
 .. ocv:cfunction:: void cvIntegral( const CvArr* image, CvArr* sum, CvArr* sqsum=NULL, CvArr* tilted_sum=NULL )
 
@@ -607,6 +617,8 @@ Calculates the integral of an image.
     :param tilted: integral for the image rotated by 45 degrees; it is :math:`(W+1)\times (H+1)` array  with the same data type as ``sum``.
 
     :param sdepth: desired depth of the integral and the tilted integral images,  ``CV_32S``, ``CV_32F``,  or  ``CV_64F``.
+
+    :param sqdepth: desired depth of the integral image of squared pixel values, ``CV_32F``  or  ``CV_64F``.
 
 The functions calculate one or more integral images for the source image as follows:
 
@@ -738,6 +750,12 @@ Visual demonstration and usage example of the function can be found in the OpenC
 
 .. seealso:: :ocv:func:`findContours`
 
+.. note::
+
+   * An example using the watershed algorithm can be found at opencv_source_code/samples/cpp/watershed.cpp
+
+   * (Python) An example using the watershed algorithm can be found at opencv_source_code/samples/python2/watershed.py
+
 grabCut
 -------
 Runs the GrabCut algorithm.
@@ -783,4 +801,9 @@ See the sample ``grabcut.cpp`` to learn how to use the function.
 
 .. [Meyer92] Meyer, F. *Color Image Segmentation*, ICIP92, 1992
 
-.. [Telea04] Alexandru Telea, *An Image Inpainting Technique Based on the Fast Marching Method*. Journal of Graphics, GPU, and Game Tools 9 1, pp 23-34 (2004)
+
+.. note::
+
+   * An example using the GrabCut algorithm can be found at opencv_source_code/samples/cpp/grabcut.cpp
+
+   * (Python) An example using the GrabCut algorithm can be found at opencv_source_code/samples/python2/grabcut.py

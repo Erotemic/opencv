@@ -169,6 +169,7 @@ public:
 
     CV_WRAP virtual int descriptorSize() const = 0;
     CV_WRAP virtual int descriptorType() const = 0;
+    CV_WRAP virtual int defaultNorm() const = 0;
 
     CV_WRAP virtual bool empty() const;
 
@@ -226,6 +227,8 @@ public:
     int descriptorSize() const;
     // returns the descriptor type
     int descriptorType() const;
+    // returns the default norm type
+    int defaultNorm() const;
 
     // Compute the BRISK features on an image
     void operator()(InputArray image, InputArray mask, std::vector<KeyPoint>& keypoints) const;
@@ -320,6 +323,8 @@ public:
     int descriptorSize() const;
     // returns the descriptor type
     int descriptorType() const;
+    // returns the default norm type
+    int defaultNorm() const;
 
     // Compute the ORB features and descriptors on an image
     void operator()(InputArray image, InputArray mask, std::vector<KeyPoint>& keypoints) const;
@@ -376,6 +381,9 @@ public:
 
     /** returns the descriptor type */
     virtual int descriptorType() const;
+
+    /** returns the default norm type */
+    virtual int defaultNorm() const;
 
     /** select the 512 "best description pairs"
          * @param images grayscale images set
@@ -528,7 +536,7 @@ CV_EXPORTS void FAST( InputArray image, CV_OUT std::vector<KeyPoint>& keypoints,
 class CV_EXPORTS_W FastFeatureDetector : public FeatureDetector
 {
 public:
-    enum
+    enum Type
     {
       TYPE_5_8 = 0, TYPE_7_12 = 1, TYPE_9_16 = 2
     };
@@ -657,7 +665,7 @@ public:
      * gridRows            Grid rows count.
      * gridCols            Grid column count.
      */
-    CV_WRAP GridAdaptedFeatureDetector( const Ptr<FeatureDetector>& detector=0,
+    CV_WRAP GridAdaptedFeatureDetector( const Ptr<FeatureDetector>& detector=Ptr<FeatureDetector>(),
                                         int maxTotalKeypoints=1000,
                                         int gridRows=4, int gridCols=4 );
 
@@ -848,6 +856,7 @@ public:
 
     virtual int descriptorSize() const;
     virtual int descriptorType() const;
+    virtual int defaultNorm() const;
 
     virtual bool empty() const;
 
@@ -874,6 +883,7 @@ public:
 
     virtual int descriptorSize() const;
     virtual int descriptorType() const;
+    virtual int defaultNorm() const;
 
     /// @todo read and write for brief
 
@@ -972,7 +982,7 @@ struct CV_EXPORTS Hamming
 
 typedef Hamming HammingLUT;
 
-template<int cellsize> struct CV_EXPORTS HammingMultilevel
+template<int cellsize> struct HammingMultilevel
 {
     enum { normType = NORM_HAMMING + (cellsize>1) };
     typedef unsigned char ValueType;
@@ -1154,8 +1164,8 @@ protected:
 class CV_EXPORTS_W FlannBasedMatcher : public DescriptorMatcher
 {
 public:
-    CV_WRAP FlannBasedMatcher( const Ptr<flann::IndexParams>& indexParams=new flann::KDTreeIndexParams(),
-                       const Ptr<flann::SearchParams>& searchParams=new flann::SearchParams() );
+    CV_WRAP FlannBasedMatcher( const Ptr<flann::IndexParams>& indexParams=makePtr<flann::KDTreeIndexParams>(),
+                       const Ptr<flann::SearchParams>& searchParams=makePtr<flann::SearchParams>() );
 
     virtual void add( const std::vector<Mat>& descriptors );
     virtual void clear();
@@ -1464,7 +1474,7 @@ public:
 
     void add( const Mat& descriptors );
     const std::vector<Mat>& getDescriptors() const;
-    int descripotorsCount() const;
+    int descriptorsCount() const;
 
     virtual void clear();
 

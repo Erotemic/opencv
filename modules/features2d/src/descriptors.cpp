@@ -99,7 +99,7 @@ Ptr<DescriptorExtractor> DescriptorExtractor::create(const String& descriptorExt
     {
         size_t pos = String("Opponent").size();
         String type = descriptorExtractorType.substr(pos);
-        return new OpponentColorDescriptorExtractor(DescriptorExtractor::create(type));
+        return makePtr<OpponentColorDescriptorExtractor>(DescriptorExtractor::create(type));
     }
 
     return Algorithm::create<DescriptorExtractor>("Feature2D." + descriptorExtractorType);
@@ -119,7 +119,7 @@ CV_WRAP void Feature2D::compute( const Mat& image, CV_OUT CV_IN_OUT std::vector<
 OpponentColorDescriptorExtractor::OpponentColorDescriptorExtractor( const Ptr<DescriptorExtractor>& _descriptorExtractor ) :
         descriptorExtractor(_descriptorExtractor)
 {
-    CV_Assert( !descriptorExtractor.empty() );
+    CV_Assert( descriptorExtractor );
 }
 
 static void convertBGRImageToOpponentColorSpace( const Mat& bgrImage, std::vector<Mat>& opponentChannels )
@@ -247,9 +247,14 @@ int OpponentColorDescriptorExtractor::descriptorType() const
     return descriptorExtractor->descriptorType();
 }
 
+int OpponentColorDescriptorExtractor::defaultNorm() const
+{
+    return descriptorExtractor->defaultNorm();
+}
+
 bool OpponentColorDescriptorExtractor::empty() const
 {
-    return descriptorExtractor.empty() || (DescriptorExtractor*)(descriptorExtractor)->empty();
+    return !descriptorExtractor || descriptorExtractor->empty();
 }
 
 }

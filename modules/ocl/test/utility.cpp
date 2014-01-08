@@ -39,14 +39,13 @@
 //
 //M*/
 
-#include "precomp.hpp"
+#include "test_precomp.hpp"
 #define VARNAME(A) #A
 using namespace std;
 using namespace cv;
-using namespace cv::gpu;
 using namespace cvtest;
 
-
+namespace cvtest {
 //std::string generateVarList(int first,...)
 //{
 //	vector<std::string> varname;
@@ -73,65 +72,44 @@ using namespace cvtest;
 //	return ss.str();
 //};
 
-int randomInt(int minVal, int maxVal)
+cv::ocl::oclMat createMat_ocl(cv::RNG& rng, Size size, int type, bool useRoi)
 {
-    RNG &rng = TS::ptr()->get_rng();
-    return rng.uniform(minVal, maxVal);
+    Size size0 = size;
+
+    if (useRoi)
+    {
+        size0.width += rng.uniform(5, 15);
+        size0.height += rng.uniform(5, 15);
+    }
+
+    cv::ocl::oclMat d_m(size0, type);
+
+    if (size0 != size)
+        d_m = d_m(Rect((size0.width - size.width) / 2, (size0.height - size.height) / 2, size.width, size.height));
+
+    return d_m;
 }
 
-double randomDouble(double minVal, double maxVal)
+cv::ocl::oclMat loadMat_ocl(cv::RNG& rng, const Mat& m, bool useRoi)
 {
-    RNG &rng = TS::ptr()->get_rng();
-    return rng.uniform(minVal, maxVal);
+    CV_Assert(m.type() == CV_8UC1 || m.type() == CV_8UC3);
+    cv::ocl::oclMat d_m;
+    d_m = createMat_ocl(rng, m.size(), m.type(), useRoi);
+
+    Size ls;
+    Point pt;
+
+    d_m.locateROI(ls, pt);
+
+    Rect roi(pt.x, pt.y, d_m.size().width, d_m.size().height);
+
+    cv::ocl::oclMat m_ocl(m);
+
+    cv::ocl::oclMat d_m_roi(d_m, roi);
+
+    m_ocl.copyTo(d_m);
+    return d_m;
 }
-
-Size randomSize(int minVal, int maxVal)
-{
-    return cv::Size(randomInt(minVal, maxVal), randomInt(minVal, maxVal));
-}
-
-Scalar randomScalar(double minVal, double maxVal)
-{
-    return Scalar(randomDouble(minVal, maxVal), randomDouble(minVal, maxVal), randomDouble(minVal, maxVal), randomDouble(minVal, maxVal));
-}
-
-Mat randomMat(Size size, int type, double minVal, double maxVal)
-{
-    return randomMat(TS::ptr()->get_rng(), size, type, minVal, maxVal, false);
-}
-
-/*
-void showDiff(InputArray gold_, InputArray actual_, double eps)
-{
-    Mat gold;
-    if (gold_.kind() == _InputArray::MAT)
-        gold = gold_.getMat();
-    else
-        gold_.getGpuMat().download(gold);
-
-    Mat actual;
-    if (actual_.kind() == _InputArray::MAT)
-        actual = actual_.getMat();
-    else
-        actual_.getGpuMat().download(actual);
-
-    Mat diff;
-    absdiff(gold, actual, diff);
-    threshold(diff, diff, eps, 255.0, cv::THRESH_BINARY);
-
-    namedWindow("gold", WINDOW_NORMAL);
-    namedWindow("actual", WINDOW_NORMAL);
-    namedWindow("diff", WINDOW_NORMAL);
-
-    imshow("gold", gold);
-    imshow("actual", actual);
-    imshow("diff", diff);
-
-    waitKey();
-}
-*/
-
-
 
 vector<MatType> types(int depth_start, int depth_end, int cn_start, int cn_end)
 {
@@ -225,7 +203,7 @@ double checkRectSimilarity(Size sz, std::vector<Rect>& ob1, std::vector<Rect>& o
         cpu_result.setTo(0);
 
         for(vector<Rect>::const_iterator r = ob1.begin(); r != ob1.end(); r++)
-        {      
+        {
             cv::Mat cpu_result_roi(cpu_result, *r);
             cpu_result_roi.setTo(1);
             cpu_result.copyTo(cpu_result);
@@ -252,3 +230,137 @@ double checkRectSimilarity(Size sz, std::vector<Rect>& ob1, std::vector<Rect>& o
     return final_test_result;
 }
 
+void showDiff(const Mat& src, const Mat& gold, const Mat& actual, double eps, bool alwaysShow)
+{
+    Mat diff, diff_thresh;
+    absdiff(gold, actual, diff);
+    diff.convertTo(diff, CV_32F);
+    threshold(diff, diff_thresh, eps, 255.0, cv::THRESH_BINARY);
+
+    if (alwaysShow || cv::countNonZero(diff_thresh.reshape(1)) > 0)
+    {
+#if 0
+        std::cout << "Src: " << std::endl << src << std::endl;
+        std::cout << "Reference: " << std::endl << gold << std::endl;
+        std::cout << "OpenCL: " << std::endl << actual << std::endl;
+#endif
+
+        namedWindow("src", WINDOW_NORMAL);
+        namedWindow("gold", WINDOW_NORMAL);
+        namedWindow("actual", WINDOW_NORMAL);
+        namedWindow("diff", WINDOW_NORMAL);
+
+        imshow("src", src);
+        imshow("gold", gold);
+        imshow("actual", actual);
+        imshow("diff", diff);
+
+        waitKey();
+    }
+}
+
+namespace
+{
+    bool keyPointsEquals(const cv::KeyPoint& p1, const cv::KeyPoint& p2)
+    {
+        const double maxPtDif = 1.0;
+        const double maxSizeDif = 1.0;
+        const double maxAngleDif = 2.0;
+        const double maxResponseDif = 0.1;
+
+        double dist = cv::norm(p1.pt - p2.pt);
+
+        if (dist < maxPtDif &&
+            fabs(p1.size - p2.size) < maxSizeDif &&
+            abs(p1.angle - p2.angle) < maxAngleDif &&
+            abs(p1.response - p2.response) < maxResponseDif &&
+            p1.octave == p2.octave &&
+            p1.class_id == p2.class_id)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    struct KeyPointLess : std::binary_function<cv::KeyPoint, cv::KeyPoint, bool>
+    {
+        bool operator()(const cv::KeyPoint& kp1, const cv::KeyPoint& kp2) const
+        {
+            return kp1.pt.y < kp2.pt.y || (kp1.pt.y == kp2.pt.y && kp1.pt.x < kp2.pt.x);
+        }
+    };
+}
+
+testing::AssertionResult assertKeyPointsEquals(const char* gold_expr, const char* actual_expr, std::vector<cv::KeyPoint>& gold, std::vector<cv::KeyPoint>& actual)
+{
+    if (gold.size() != actual.size())
+    {
+        return testing::AssertionFailure() << "KeyPoints size mistmach\n"
+                                           << "\"" << gold_expr << "\" : " << gold.size() << "\n"
+                                           << "\"" << actual_expr << "\" : " << actual.size();
+    }
+
+    std::sort(actual.begin(), actual.end(), KeyPointLess());
+    std::sort(gold.begin(), gold.end(), KeyPointLess());
+
+    for (size_t i = 0; i < gold.size(); ++i)
+    {
+        const cv::KeyPoint& p1 = gold[i];
+        const cv::KeyPoint& p2 = actual[i];
+
+        if (!keyPointsEquals(p1, p2))
+        {
+            return testing::AssertionFailure() << "KeyPoints differ at " << i << "\n"
+                                               << "\"" << gold_expr << "\" vs \"" << actual_expr << "\" : \n"
+                                               << "pt : " << testing::PrintToString(p1.pt) << " vs " << testing::PrintToString(p2.pt) << "\n"
+                                               << "size : " << p1.size << " vs " << p2.size << "\n"
+                                               << "angle : " << p1.angle << " vs " << p2.angle << "\n"
+                                               << "response : " << p1.response << " vs " << p2.response << "\n"
+                                               << "octave : " << p1.octave << " vs " << p2.octave << "\n"
+                                               << "class_id : " << p1.class_id << " vs " << p2.class_id;
+        }
+    }
+
+    return ::testing::AssertionSuccess();
+}
+
+int getMatchedPointsCount(std::vector<cv::KeyPoint>& gold, std::vector<cv::KeyPoint>& actual)
+{
+    std::sort(actual.begin(), actual.end(), KeyPointLess());
+    std::sort(gold.begin(), gold.end(), KeyPointLess());
+
+    int validCount = 0;
+
+    size_t sz = std::min(gold.size(), actual.size());
+    for (size_t i = 0; i < sz; ++i)
+    {
+        const cv::KeyPoint& p1 = gold[i];
+        const cv::KeyPoint& p2 = actual[i];
+
+        if (keyPointsEquals(p1, p2))
+            ++validCount;
+    }
+
+    return validCount;
+}
+
+int getMatchedPointsCount(const std::vector<cv::KeyPoint>& keypoints1, const std::vector<cv::KeyPoint>& keypoints2, const std::vector<cv::DMatch>& matches)
+{
+    int validCount = 0;
+
+    for (size_t i = 0; i < matches.size(); ++i)
+    {
+        const cv::DMatch& m = matches[i];
+
+        const cv::KeyPoint& p1 = keypoints1[m.queryIdx];
+        const cv::KeyPoint& p2 = keypoints2[m.trainIdx];
+
+        if (keyPointsEquals(p1, p2))
+            ++validCount;
+    }
+
+    return validCount;
+}
+
+} // namespace cvtest

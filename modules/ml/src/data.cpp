@@ -170,8 +170,13 @@ int CvMLData::read_csv(const char* filename)
 
     // skip header lines
     for( int i = 0; i < header_lines_number; i++ )
+    {
         if( fgets( buf, M, file ) == 0 )
+        {
+            fclose(file);
             return -1;
+        }
+    }
 
     // read the first data line and determine the number of variables
     if( !fgets_chomp( buf, M, file ))
@@ -227,6 +232,7 @@ int CvMLData::read_csv(const char* filename)
             if (!token)
             {
                 fclose(file);
+                delete [] el_ptr;
                 return -1;
             }
         }
