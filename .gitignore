@@ -8,3 +8,5 @@ Thumbs.db
 tags
 build
 tegra/
+CMakeCache.txt
+CMakeFiles
