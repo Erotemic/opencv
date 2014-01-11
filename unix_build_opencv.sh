@@ -15,8 +15,8 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     PYTHON_LIBRARY="$MACPORTS_PYFRAMEWORK/lib/python2.7/config/libpython2.7.dylib"
     # OXS cmake command
     cmake -G "Unix Makefiles" \
-        -D CMAKE_OSX_ARCHITECTURES=x86_64 \
         -D PYTHON_LIBRARY=$PYTHON_LIBRARY \
+        #-D CMAKE_OSX_ARCHITECTURES=x86_64 \
         #-D BUILD_PERF_TESTS=OFF \
         ~/code/opencv
 else
