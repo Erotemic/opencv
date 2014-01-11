@@ -12,7 +12,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     # PYTHON_LIBRARY="/usr/lib/libpython2.7.dylib"
     MACPORTS_PYFRAMEWORK="/opt/local/Library/Frameworks/Python.framework/Versions/2.7"
     PYTHON_PACKAGES_PATH="$MACPORTS_PYFRAMEWORK/lib/python2.7/site-packages"
-    PYTHON_LIBRARY="/$MACPORTS_PYFRAMEWORK/lib/python2.7/config/libpython2.7.dylib"
+    PYTHON_LIBRARY="$MACPORTS_PYFRAMEWORK/lib/python2.7/config/libpython2.7.dylib"
     # OXS cmake command
     cmake -G "Unix Makefiles" \
         -D CMAKE_OSX_ARCHITECTURES=x86_64 \
