@@ -25,16 +25,6 @@ cmake -G "MSYS Makefiles" ^
 -DENABLE_SSEE3=OFF ^
 -DINSTALL_PYTHON_EXAMPLES=ON ^
 ..
-:: -DBUILD_opencv_world=ON ^
-:: -DWITH_QT=ON ^
-:: -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -g -DNDEBUGS" ^
-:: -DCMAKE_C_FLAGS_RELWITHDEBINFO="-O2 -g -DNDEBUGS" ^
-:: -DCMAKE_CXX_FLAGS_RELEASE="-O2 -DNDEBUGS" ^
-:: -DCMAKE_C_FLAGS_RELEASE="-O2 -DNDEBUGS" ^
-
-:: make command that doesn't freeze on mingw
-mingw32-make -j7 "MAKE=mingw32-make -j3" -f CMakeFiles\Makefile2 all
-make install
 exit /b
 
 :exit

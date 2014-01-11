@@ -16,9 +16,10 @@ config/libpython2.7.dylib"
      #-D BUILD_PERF_TESTS=OFF \
 
     # OXS cmake command
-    export OPENCV_OS_CMAKE_OPTIONS=
+    cmake -G "Unix Makefiles" \
         -D CMAKE_OSX_ARCHITECTURES=x86_64 \
-        -D PYTHON_LIBRARY=$PYTHON_LIBRARY
+        -D PYTHON_LIBRARY=$PYTHON_LIBRARY \
+         ~/code/opencv
 else
     #cmake -G "Unix Makefiles" \
         #-D PYTHON_PACKAGES_PATH=$PYTHON_PACKAGES_PATH \
@@ -30,7 +31,6 @@ else
 fi
 
 # Configure
-cmake -G "Unix Makefiles" $OPENCV_OS_CMAKE_OPTIONS ~/code/opencv
 # Build
 make -j9
 # Install
