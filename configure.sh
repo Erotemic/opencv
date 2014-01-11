@@ -12,14 +12,13 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     # OXS cmake command
     cmake -G "Unix Makefiles" \
         -D PYTHON_LIBRARY=$PYTHON_LIBRARY \
-        -D PYTHON_PACKAGES_PATH=$PYTHON_PACKAGES_PATH
+        -D PYTHON_PACKAGES_PATH=$PYTHON_PACKAGES_PATH \
         -D CMAKE_BUILD_TYPE="Release" \
         -D INSTALL_PYTHON_EXAMPLES=ON \
         ~/code/opencv
 else
     # Linux command
     cmake -G "Unix Makefiles" \
-        -D PYTHON_LIBRARY=$PYTHON_LIBRARY \
         -D CMAKE_BUILD_TYPE="Release" \
         -D INSTALL_PYTHON_EXAMPLES=ON \
          ~/code/opencv
