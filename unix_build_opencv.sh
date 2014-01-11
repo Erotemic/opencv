@@ -16,7 +16,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     # OXS cmake command
     cmake -G "Unix Makefiles" \
         -D PYTHON_LIBRARY=$PYTHON_LIBRARY \
-        -D CMAKE_BUILD_TYPE="Release"
+        -D CMAKE_BUILD_TYPE="Release" \
         ~/code/opencv
         #-D CMAKE_OSX_ARCHITECTURES=x86_64 \
         #-D BUILD_PERF_TESTS=OFF \
