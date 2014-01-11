@@ -16,12 +16,14 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     # OXS cmake command
     cmake -G "Unix Makefiles" \
         -D PYTHON_LIBRARY=$PYTHON_LIBRARY \
+        -D CMAKE_BUILD_TYPE="Release"
         ~/code/opencv
         #-D CMAKE_OSX_ARCHITECTURES=x86_64 \
         #-D BUILD_PERF_TESTS=OFF \
 else
     cmake -G "Unix Makefiles" \
         -D PYTHON_LIBRARY=$PYTHON_LIBRARY \
+        -D CMAKE_BUILD_TYPE="Release"
          ~/code/opencv
 fi
 
@@ -30,3 +32,6 @@ fi
 make -j9
 # Install
 sudo make install
+
+# Test if this worked
+python -c "import cv2; print(cv2.__version__)"
