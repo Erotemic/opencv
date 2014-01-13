@@ -5,7 +5,7 @@ cd ~/code/opencv
 #PYTHON_PACKAGES_PATH=$(python -c "import site; print(site.USER_SITE)" 2> /dev/null)
 
 # Configure
-source unix_cmake_configure.sh
+source unix_opencv_configure.sh
 cd ~/code/opencv/build
 # Build
 make -j9
