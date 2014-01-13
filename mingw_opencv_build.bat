@@ -11,6 +11,7 @@ goto :exit
 :build_opencv
 :: make
 :: make command that doesn't freeze on mingw
+cd %HOME%\code\opencv\build
 mingw32-make -j7 "MAKE=mingw32-make -j3" -f CMakeFiles\Makefile2 all
 make install
 exit /b
