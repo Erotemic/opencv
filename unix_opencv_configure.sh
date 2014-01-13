@@ -34,7 +34,6 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
         -D BUILD_JASPER=OFF \
         -D BUILD_ZLIB=OFF \
         -D OPENCV_WARNINGS_ARE_ERRORS=OFF \
-
         ~/code/opencv
 else
     # Linux command
