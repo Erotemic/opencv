@@ -21,19 +21,64 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     export MACPORTS_PYFRAMEWORK=/opt/local/Library/Frameworks/Python.framework/Versions/2.7
     export PYTHON_LIBRARY="$MACPORTS_PYFRAMEWORK/lib/python2.7/config/libpython2.7.dylib"
     export PYTHON_PACKAGES_PATH="$MACPORTS_PYFRAMEWORK/lib/python2.7/site-packages"
+    export PYTHON_INCLUDE_DIR="$MACPORTS_PYFRAMEWORK/Headers"
     # OXS cmake command
     # Need to have port install libpng
-    cmake -G "Unix Makefiles" \
-        -D PYTHON_LIBRARY=$PYTHON_LIBRARY \
-        -D PYTHON_PACKAGES_PATH=$PYTHON_PACKAGES_PATH \
-        -D CMAKE_BUILD_TYPE="Release" \
-        -D INSTALL_PYTHON_EXAMPLES=ON \
-        -D BUILD_PNG=OFF \
-        -D BUILD_OPENEXR=OFF \
-        -D BUILD_JPEG=OFF \
-        -D BUILD_JASPER=OFF \
-        -D BUILD_ZLIB=OFF \
-        -D OPENCV_WARNINGS_ARE_ERRORS=OFF \
+        #-DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 \
+    cmake -G "Unix Makefiles"\
+        `#ARCHITECTURES options: i386, x86_64, ppc, ppc64`\
+        -DCMAKE_OSX_ARCHITECTURES=x86_64\
+        -DCMAKE_C_FLAGS=-m32\
+        -DCMAKE_CXX_FLAGS=-m32\
+        `#PYTHON`\
+        -DPYTHON_LIBRARY=$PYTHON_LIBRARY \
+        -DPYTHON_PACKAGES_PATH=$PYTHON_PACKAGES_PATH \
+        -DPYTHON_INCLUDE_DIR=$PYTHON_INCLUDE_DIR \
+        -DINSTALL_PYTHON_EXAMPLES=OFF \
+        `#DEBUGS`\
+        -DCMAKE_BUILD_TYPE="Debug" \
+        -DBUILD_WITH_DEBUG_INFO=ON \
+        -DOPENCV_WARNINGS_ARE_ERRORS=OFF \
+        `#BUILDS`\
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_PERF_TESTS=OFF \
+        -DBUILD_DOCS=OFF \
+        -DBUILD_TESTS=OFF \
+        -DBUILD_opencv_gpu=OFF \
+        -DBUILD_opencv_flann=ON \
+        -DBUILD_PNG=OFF \
+        -DBUILD_OPENEXR=OFF \
+        -DBUILD_JPEG=OFF \
+        -DBUILD_JASPER=OFF \
+        -DBUILD_ZLIB=OFF \
+        `#ENABLES`\
+        -DENABLE_SSE=OFF \
+        -DENABLE_SSE2=OFF \
+        -DENABLE_SSE3=OFF \
+        `#WITH PACKAGES`\
+        -DWITH_QT=OFF \
+        -DWITH_QUICKTIME=OFF \
+        -DWITH_OPENEXR=ON \
+        `# * CUDA * `\
+        -DWITH_CUDA=OFF  \
+        -DWITH_CUFFT=OFF `#CUDA FFT`\
+        `# * OPENCL * `\
+        -DWITH_OPENCL=OFF \
+        -DWITH_OPENCLAMDBLAS=OFF \
+        -DWITH_OPENCLAMDFFT=OFF \
+        `# * VIDEO * `\
+        -DWITH_1394=OFF `# Firewire`\
+        -DWITH_FFMPEG=ON \
+        -DWITH_GIGEAPI=ON \
+        -DWITH_PVAPI=ON \
+        -DWITH_V4L=ON \
+        `# * OTHER * `\
+        -DWITH_EIGEN=ON \
+        `# * IMAGE FORMATS * `\
+        -DWITH_JAPSER=ON \
+        -DWITH_TIFF=ON \
+        -DWITH_JPEG=ON \
+        -DWITH_PNG=ON \
         ~/code/opencv
 else
     # Linux command
