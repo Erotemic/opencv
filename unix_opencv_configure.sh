@@ -89,6 +89,16 @@ else
 fi
 
 
+# OpenCV says this is python 2.7.6
+#/opt/local/bin/python
+# OpenCV says this is python 2.7.5
+#/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config/libpython2.7.dylib 
+# this is a symlink to 
+#/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config/libpython2.7.dylib ->
+#../../../Python
+# python2.7.6 links to (via otool)
+#/opt/local/Library/Frameworks/Python.framework/Versions/2.7/Python
+
 #sudo port install zlib
 #sudo port install jasper
 #sudo port install libpng
