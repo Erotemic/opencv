@@ -7,13 +7,14 @@ rm CMakeCache.txt
 
 uninstall_opencv()
 {
-    rm -rf /usr/local/bin/opencv*
-    rm -rf /usr/local/include/opencv
-    rm -rf /usr/local/include/opencv2
-    rm -rf /usr/local/lib/libopencv*
-    rm -rf /usr/local/lib/pkgconfig/opencv.pc
-    rm -rf /opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/cv2.so
-    rm -rf /opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/cv2.pyd
+    sudo rm -rf /usr/local/bin/opencv*
+    sudo rm -rf /usr/local/include/opencv
+    sudo rm -rf /usr/local/include/opencv2
+    sudo rm -rf /usr/local/lib/libopencv*
+    sudo rm -rf /usr/local/lib/pkgconfig/opencv.pc
+    sudo rm -rf /opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/cv2.so
+    sudo rm -rf /opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/cv.py
+    sudo rm -rf /opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/cv2.pyd
 }
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -88,6 +89,8 @@ else
          ~/code/opencv
 fi
 
+
+python -c "import cv2; print(cv2.__version__)"
 
 # OpenCV says this is python 2.7.6
 #/opt/local/bin/python
