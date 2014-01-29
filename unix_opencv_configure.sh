@@ -18,10 +18,10 @@ uninstall_opencv()
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # locate python libs
-    export MACPORTS_PYFRAMEWORK=/opt/local/Library/Frameworks/Python.framework/Versions/2.7
-    export PYTHON_LIBRARY="$MACPORTS_PYFRAMEWORK/lib/python2.7/config/libpython2.7.dylib"
-    export PYTHON_PACKAGES_PATH="$MACPORTS_PYFRAMEWORK/lib/python2.7/site-packages"
-    export PYTHON_INCLUDE_DIR="$MACPORTS_PYFRAMEWORK/Headers"
+    export ports_PYFRAMEWORK=/opt/local/Library/Frameworks/Python.framework/Versions/2.7
+    export PYTHON_LIBRARY=$ports_PYFRAMEWORK/lib/python2.7/config/libpython2.7.dylib
+    export PYTHON_PACKAGES_PATH=$ports_PYFRAMEWORK/lib/python2.7/site-packages
+    export PYTHON_INCLUDE_DIR=$ports_PYFRAMEWORK/Headers
     # OXS cmake command
     # Need to have port install libpng
         #-DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 \
