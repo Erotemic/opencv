@@ -84,8 +84,9 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 else
     # Linux command
     cmake -G "Unix Makefiles" \
-        -D CMAKE_BUILD_TYPE="Release" \
-        -D INSTALL_PYTHON_EXAMPLES=ON \
+        -DCMAKE_BUILD_TYPE="Release" \
+        -DINSTALL_PYTHON_EXAMPLES=ON \
+        -DWITH_QT=On \
          ~/code/opencv
 fi
 
