@@ -86,7 +86,7 @@ else
     cmake -G "Unix Makefiles" \
         -DCMAKE_BUILD_TYPE="Release" \
         -DINSTALL_PYTHON_EXAMPLES=ON \
-        -DWITH_QT=On \
+        -DWITH_QT=OFF \
          ~/code/opencv
 fi
 
