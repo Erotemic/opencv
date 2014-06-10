@@ -1,9 +1,9 @@
 #!/bin/bash
 
-cd ~/code/opencv
+#cd ~/code/opencv
 #rm -rf ~/code/opencv/build
-mkdir ~/code/opencv/build
-cd ~/code/opencv/build
+mkdir build
+#cd build
 #PYTHON_PACKAGES_PATH=$(python -c "import site; print(site.USER_SITE)" 2> /dev/null)
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -30,7 +30,7 @@ else
 fi
 
 # Configure
-cmake -G "Unix Makefiles" $OPENCV_OS_CMAKE_OPTIONS ~/code/opencv
+cmake -G "Unix Makefiles" $OPENCV_OS_CMAKE_OPTIONS ./build
 # Build
 make -j9
 # Install
