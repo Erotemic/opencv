@@ -20,11 +20,11 @@ else
 fi
 
 # Configure
-cmake -G "Unix Makefiles" $OPENCV_OS_CMAKE_OPTIONS ~/code/opencv
+cmake -G "Unix Makefiles" $OPENCV_OS_CMAKE_OPTIONS ~/code/opencv || { echo "FAILED CMAKE" ; exit 1; }
 # Build
-make -j9
+make -j9  || { echo "FAILED MAKE" ; exit 1; }
 # Install
-sudo make install
+sudo make install || { echo "FAILED MAKE INSTALL" ; exit 1; }
 
 
 # GRAVE:
