@@ -10,9 +10,11 @@ cd ~/code/opencv/build
 
 echo "Finished Configure"
 
-# Build and install if succesfull
-make -j9 && sudo make install
+export NCPUS=$(grep -c ^processor /proc/cpuinfo)
 
+# Build and install if succesfull
+make -j$NCPUS || { echo "FAILED MAKE" ; exit 1; }
+sudo make install || { echo "FAILED MAKE INSTALL" ; exit 1; }
 echo "Finished Build"
 
 # Test if this worked
