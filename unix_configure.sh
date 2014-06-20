@@ -90,10 +90,11 @@ else
     cmake -G "Unix Makefiles" \
         -DCMAKE_BUILD_TYPE="Release" \
         -DINSTALL_PYTHON_EXAMPLES=ON \
-        #-DPYTHON_EXECUTABLE=$PYTHON27_PREFIX/bin/python2.7 \
-        #-DPYTHON_INCLUDE_DIR=$PYTHON27_PREFIX/include/python2.7 \
         -DWITH_QT=OFF \
          ~/code/opencv
+
+        #-DPYTHON_EXECUTABLE=$PYTHON27_PREFIX/bin/python2.7 \
+        #-DPYTHON_INCLUDE_DIR=$PYTHON27_PREFIX/include/python2.7 \
     
 fi
 
