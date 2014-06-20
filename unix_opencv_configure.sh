@@ -2,7 +2,7 @@
 cd ~/code/opencv
 mkdir ~/code/opencv/build
 cd ~/code/opencv/build
-rm CMakeCache.txt
+#rm CMakeCache.txt
 
 
 uninstall_opencv()
