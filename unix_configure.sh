@@ -83,11 +83,18 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
         ~/code/opencv
 else
     # Linux command
+    #$(which /usr/bin/python2.7)
+    #$(python2.7-config --exec-prefix)/bin/python2.7
+    export $PYTHON27_PREFIX=$(python2.7-config --exec-prefix)
+
     cmake -G "Unix Makefiles" \
         -DCMAKE_BUILD_TYPE="Release" \
         -DINSTALL_PYTHON_EXAMPLES=ON \
+        -DPYTHON_EXECUTABLE=$PYTHON27_PREFIX/bin/python2.7 \
+        -DPYTHON_INCLUDE_DIR=$PYTHON27_PREFIX/include/python2.7 \
         -DWITH_QT=OFF \
          ~/code/opencv
+    
 fi
 
 

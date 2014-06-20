@@ -1,8 +1,10 @@
 SET ORIGINAL=%CD%
 
+:: FIXEME: ABS PATH
 cd %HOME%\code\opencv
+
 :: first do configure
-call mingw_opencv_configure.bat
+call mingw_configure.bat
 :: then do build
 call :build_opencv
 goto :exit 
