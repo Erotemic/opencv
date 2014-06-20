@@ -85,16 +85,41 @@ else
     # Linux command
     #$(which /usr/bin/python2.7)
     #$(python2.7-config --exec-prefix)/bin/python2.7
-    export $PYTHON27_PREFIX=$(python2.7-config --exec-prefix)
+    #export $PYTHON27_PREFIX=$(python2.7-config --exec-prefix)
+
+
+    # Get information for the correct (2.7) version of python
+    print_py_config_vars()
+    {
+        python2.7 -c "from distutils import sysconfig; print('\n'.join(map(str, sysconfig.get_config_vars().items())))"
+    }
+    get_py_config_var()
+    {
+        python2.7 -c "from distutils import sysconfig; print(sysconfig.get_config_vars()['$1'])"
+    }
+
+    export PYTHON_EXECUTABLE="$(get_py_config_var 'BINDIR')/python2.7"
+    export PYTHON_INCLUDE_DIR=$(get_py_config_var 'INCLUDEPY')
+    export PYTHON_LIBRARY=$(get_py_config_var 'LIBDIR')/$(get_py_config_var 'LDLIBRARY')
+    export PYTHON_PACKAGES_PATH=$(python2.7 -c "import site; print(site.getsitepackages()[0])")
+
+    #echo $PYTHON_EXECUTABLE
+    #echo $PYTHON_LIBRARY
+    #echo $PYTHON_INCLUDE_DIR
+    #echo $PYTHON_PACKAGES_PATH
+
+    #-DPYTHON_EXECUTABLE=$PYTHON27_PREFIX/bin/python2.7 \
+    #-DPYTHON_INCLUDE_DIR=$PYTHON27_PREFIX/include/python2.7 \
 
     cmake -G "Unix Makefiles" \
         -DCMAKE_BUILD_TYPE="Release" \
         -DINSTALL_PYTHON_EXAMPLES=ON \
+        -DPYTHON_EXECUTABLE=$PYTHON_EXECUTABLE \
+        -DPYTHON_INCLUDE_DIR=$PYTHON_INCLUDE_DIR \
+        -DPYTHON_LIBRARY=$PYTHON_LIBRARY \
+        -DPYTHON_PACKAGES_PATH=$PYTHON_PACKAGES_PATH \
         -DWITH_QT=OFF \
          ~/code/opencv
-
-        #-DPYTHON_EXECUTABLE=$PYTHON27_PREFIX/bin/python2.7 \
-        #-DPYTHON_INCLUDE_DIR=$PYTHON27_PREFIX/include/python2.7 \
     
 fi
 
