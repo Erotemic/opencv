@@ -123,9 +123,7 @@ else
     
 fi
 
-
-python -c "import cv2; print(cv2.__version__)"
-
+#python -c "import cv2; print(cv2.__version__)"
 # OpenCV says this is python 2.7.6
 #/opt/local/bin/python
 # OpenCV says this is python 2.7.5

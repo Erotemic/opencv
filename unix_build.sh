@@ -19,4 +19,4 @@ sudo make install || { echo "FAILED MAKE INSTALL" ; exit 1; }
 echo "Finished Build"
 
 # Test if this worked
-python -c "import cv2; print(cv2.__version__)"
+python2.7 -c "import cv2; print(cv2.__version__)"
