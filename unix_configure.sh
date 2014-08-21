@@ -37,7 +37,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
         -DPYTHON_INCLUDE_DIR=$PYTHON_INCLUDE_DIR \
         -DINSTALL_PYTHON_EXAMPLES=OFF \
         `#DEBUGS`\
-        -DCMAKE_BUILD_TYPE="Debug" \
+        -DCMAKE_BUILD_TYPE="Release" \
         -DBUILD_WITH_DEBUG_INFO=ON \
         -DOPENCV_WARNINGS_ARE_ERRORS=OFF \
         `#BUILDS`\
