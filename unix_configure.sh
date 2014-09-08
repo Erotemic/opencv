@@ -91,16 +91,17 @@ else
     # Get information for the correct (2.7) version of python
     print_py_config_vars()
     {
-        python2.7 -c "from distutils import sysconfig; print('\n'.join(map(str, sysconfig.get_config_vars().items())))"
+        python2.7 -c "import sysconfig; print('\n'.join(map(str, sysconfig.get_config_vars().items())))"
     }
     get_py_config_var()
     {
-        python2.7 -c "from distutils import sysconfig; print(sysconfig.get_config_vars()['$1'])"
+        python2.7 -c "import sysconfig; print(sysconfig.get_config_vars()['$1'])"
     }
 
+    
     export PYTHON_EXECUTABLE="$(get_py_config_var 'BINDIR')/python2.7"
     export PYTHON_INCLUDE_DIR=$(get_py_config_var 'INCLUDEPY')
-    export PYTHON_LIBRARY=$(get_py_config_var 'LIBDIR')/$(get_py_config_var 'LDLIBRARY')
+    export PYTHON_LIBRARY=$(get_py_config_var 'LIBDIR')/$(get_py_config_var 'MULTIARCH')/$(get_py_config_var 'LDLIBRARY')
     export PYTHON_PACKAGES_PATH=$(python2.7 -c "import site; print(site.getsitepackages()[0])")
 
     #echo $PYTHON_EXECUTABLE
@@ -119,6 +120,14 @@ else
         -DPYTHON_LIBRARY=$PYTHON_LIBRARY \
         -DPYTHON_PACKAGES_PATH=$PYTHON_PACKAGES_PATH \
         -DWITH_QT=OFF \
+        -DWITH_CUDA=OFF  \
+        -DWITH_CUFFT=OFF `#CUDA FFT`\
+        -DWITH_OPENCL=OFF \
+        -DWITH_OPENCLAMDBLAS=OFF \
+        -DWITH_OPENCLAMDFFT=OFF \
+        -DBUILD_PERF_TESTS=OFF \
+        -DBUILD_DOCS=OFF \
+        -DBUILD_TESTS=OFF \
          ~/code/opencv
     
 fi

@@ -14,7 +14,9 @@ echo "Finished Configure"
 export NCPUS=$(grep -c ^processor /proc/cpuinfo)
 
 # Build and install if succesfull
+echo "Running: make -j$NCPUS"
 make -j$NCPUS || { echo "FAILED MAKE" ; exit 1; }
+echo "Running: sudo make install"
 sudo make install || { echo "FAILED MAKE INSTALL" ; exit 1; }
 echo "Finished Build"
 
